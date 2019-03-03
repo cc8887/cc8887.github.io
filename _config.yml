@@ -1,20 +1,16 @@
-title:            Balzac
+title:            比心
 tagline:          A beautiful theme.
-description:      Describe your website.
+description:      一个不知道为什么建立起来的博客.
 canonical: http://jekyll.gtat.me
 
 # Owner/author information
 owner:
-  name:           Cole Townsend
+  name:           C YC
   avatar:         avatar.png
-  bio:            "Aesthete & Athlete"
-  email:          cole@coletownsend.com
-  twitter:        twnsndco
-  github:         coletownsend
-  instagram:      ctrunsthis
-  dribbble:       coletownsend
-  disqus:         balzac
-  location:       "Buffalo, NY"
+  bio:            ""
+  email:          727626166@qq.com
+  github:         cc8887
+  location:       "China"
   # Plug in your disqus shortname!
 
 tools:
@@ -28,14 +24,10 @@ opengraph:
 # Links to include in top navigation
 # For external links add external: true
 links:
-  - title: About
-    url: /about
   - title: Github
-    url: https://github.com/ColeTownsend/Balzac-for-Jekyll
+    url: https://github.com/cc8887
     external: true
-  - title: Cole Who?
-    url: http://coletownsend.com
-    external: true
+
 
 # http://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 timezone:    America/New_York
