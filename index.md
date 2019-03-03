@@ -1,7 +1,7 @@
 ---
 layout: home
-title: "Recent Posts"
-tags: [Jekyll, theme, responsive, blog, template]
+title: "CYC‘s blog"
+tags: [转行, java, 后端]
 image:
   feature: typewriter.jpg
 ---
