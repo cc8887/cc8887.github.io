@@ -9,7 +9,7 @@ window.PROFILE = {
   enName: "CC8887",
   title: "游戏客户端 / AI 工具开发",
   avatarText: "★",
-  desc: "以工程师的方式拆解问题，以玩家的热情打磨体验。专注 Unreal 客户端、性能优化与 AI 工具链落地。",
+  desc: "专注 Unreal 客户端、性能优化与 AI 工具链落地。",
   heroTags: [
     { k: "当前等级", v: "Lv.74" },
     { k: "职业",     v: "AI 炼金术士" },
