@@ -276,4 +276,6 @@
 @media (max-width: 560px){
   .attrs{ grid-template-columns:1fr; }
   .hero{ min-height:62vh; }
+  .projects{ padding:8px 16px 44px; }
+  .proj-grid{ grid-template-columns:1fr; }
 }

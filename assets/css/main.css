@@ -200,6 +200,68 @@ ul{ margin:0; padding:0; list-style:none; }
   border:1px solid #000;
 }
 
+/* ---------- 项目陈列（hero 下方整宽区块） ----------
+   放在 <main class="layout"> 之外：天然整宽、不参与双列栅格，
+   既不干扰侧栏 sticky 计算，也能把时间轴与面板整体推出首屏。 */
+.projects{
+  position:relative; z-index:var(--z-ui);
+  max-width:1420px; margin:0 auto;
+  padding:8px 20px 56px;
+}
+.proj-title{
+  font-size:15px; font-weight:700; color:var(--gold);
+  letter-spacing:.24em; text-align:center;
+  text-shadow:1px 1px 0 #000;
+}
+.proj-sub{
+  margin-top:8px; text-align:center;
+  color:var(--ink-faint); font-size:13px; letter-spacing:.04em;
+}
+.proj-grid{
+  margin-top:26px;
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(288px, 1fr));
+  gap:16px;
+}
+.proj-card{
+  display:flex; flex-direction:column;
+  padding:16px 18px 14px;
+  text-decoration:none;
+  /* 与时间轴卡片同一套像素石板框，保持视觉一致 */
+  border:4px solid transparent;
+  border-image:url("../img/frame_card.png") 4 / 4px stretch;
+  background:linear-gradient(150deg, rgba(38,48,72,.92), rgba(18,24,38,.94));
+  background-clip:padding-box;
+  border-radius:0;
+  transition:transform .28s var(--ease), box-shadow .28s var(--ease);
+}
+.proj-card:hover{
+  transform:translateY(-3px);
+  box-shadow:0 12px 34px -16px rgba(0,0,0,.9), inset 0 0 0 1px rgba(242,193,78,.22);
+}
+.proj-name{
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  font:700 15px/1.4 var(--font-num);
+  color:var(--ink-bright);
+  letter-spacing:.02em;
+}
+.proj-name .arrow{
+  color:var(--gold); font-size:13px; opacity:.55;
+  transition:opacity .28s, transform .28s var(--ease);
+}
+.proj-card:hover .proj-name .arrow{ opacity:1; transform:translate(2px,-2px); }
+.proj-desc{
+  margin-top:10px; flex:1;
+  color:var(--ink-dim); font-size:13px; line-height:1.72;
+}
+.proj-tags{ margin-top:12px; display:flex; flex-wrap:wrap; gap:6px; }
+.proj-star{
+  margin-top:12px; padding-top:9px;
+  border-top:1px solid var(--line-soft);
+  font:600 11px/1 var(--font-num);
+  color:var(--gold); letter-spacing:.06em;
+}
+
 /* ---------- 时间轴 ---------- */
 .timeline{ position:relative; padding-left:46px; }
 .tl-axis{
@@ -219,6 +281,10 @@ ul{ margin:0; padding:0; list-style:none; }
 }
 
 .tl-list{ display:flex; flex-direction:column; gap:34px; }
+
+/* 尾部占位：撑出额外滚动距离，让最后一章也能滚到判定线（屏幕中部）
+   高度由 JS 依视口动态写入；纯占位，不参与交互与辅助技术。 */
+.tl-tail{ height:0; pointer-events:none; }
 
 .node{ position:relative; }
 .node-dot{

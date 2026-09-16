@@ -166,3 +166,48 @@ window.PANEL_BASE = {
   mpMax: 5120,
   expRate: 0
 };
+
+/* ---------- 项目陈列（hero 下方整宽区块） ----------
+   name  : 仓库名
+   desc  : 一句话说明
+   tags  : 技术标签
+   url   : 仓库地址
+   stars : GitHub Star 数（静态快照，不发起任何网络请求）
+------------------------------------------------------------ */
+window.PROJECTS = [
+  {
+    name: "Blueprint2DSL",
+    desc: "把 UE 逻辑蓝图翻译成 Lisp 风格的 S-expression 文本，导出与导入双向打通，让图形逻辑第一次真正走进 diff、评审与 AI 生成的流程。",
+    tags: ["Unreal", "Blueprint", "DSL", "MCP"],
+    url: "https://github.com/cc8887/Blueprint2DSL",
+    stars: 24
+  },
+  {
+    name: "AnimationBP2FP-N",
+    desc: "动画蓝图与文本的双向编译器：AnimLang 让动画状态机可 diff、可批量改写，并配好 MCP 插件供 Agent 直接调用。",
+    tags: ["Unreal", "Animation Blueprint", "DSL", "MCP"],
+    url: "https://github.com/cc8887/AnimationBP2FP-N",
+    stars: 17
+  },
+  {
+    name: "MaterialBP2DSL",
+    desc: "材质图与 MatLang 双向互转，从 UE 4.27 一路验证到 5.8，让材质资产也能被文本化管理、批量重构。",
+    tags: ["Unreal", "Material", "DSL", "MCP"],
+    url: "https://github.com/cc8887/MaterialBP2DSL",
+    stars: 14
+  },
+  {
+    name: "UE-Editor-MCPServer",
+    desc: "把 Unreal Editor 封装成 MCP Server，AI Agent 通过 Python 直接驱动编辑器干活，执行前还能用 mypy 先做一轮类型检查兜底。",
+    tags: ["Unreal", "MCP", "Python", "AI Agent"],
+    url: "https://github.com/cc8887/UE-Editor-MCPServer",
+    stars: 11
+  },
+  {
+    name: "RmlUiUnreal",
+    desc: "给 Unreal 装上 HTML/CSS 风格的 UI 与 Vue 3：走 Slate / RHI 原生路径而非内嵌浏览器，RenderFrame 开销比 DX11 后端低近八成。",
+    tags: ["Unreal", "RmlUi", "Vue 3", "C++"],
+    url: "https://github.com/cc8887/RmlUiUnreal",
+    stars: 2
+  }
+];
