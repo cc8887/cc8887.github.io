@@ -38,6 +38,9 @@
   var FULL_DIAG = 0.58;      // 终态光半径 = 0.58 * 视口对角线
   var SMOOTH = 4;            // 半径/位置追随速率（帧率无关）
   var EDGE_MARGIN = 0.08;    // 光源目标点最多贴到视口边缘 8% 处
+  /* 完全照不到处残留的黑度（0 = 全亮，1 = 纯黑）。
+     1 即"火光照不到 = 黑漆漆"；若希望留一点余晖可下调（如 0.88）。 */
+  var MASK_FAR = 1.0;
 
   /* 光源：target 为外部设定（英雄位置），cur 平滑追随 */
   var tgt = { x: 0, y: 0, has: false };
@@ -89,7 +92,13 @@
     radius += (goal - radius) * s;
   }
 
-  /* ---------------- 全屏光照层（照亮砖墙） ---------------- */
+  /* ---------------- 全屏光照层：黑幕蒙版 + 挖光洞 ----------------
+     模型（与"画一层深色渐变"相反）：
+       1) 先铺满一层【纯黑蒙版】—— 照不到就是黑漆漆
+       2) 再以光源为中心用 destination-out 把蒙版【擦出透明的光洞】
+          —— 蒙版的"透明度"即是光照强度：越靠近光源擦得越透
+       3) 最后在光洞内叠加暖色火光
+     这样照不到处是真正的纯黑，而不是"半透明的深色"。 */
   function drawBackdrop() {
     var W = w.innerWidth, H = w.innerHeight;
     /* 以 CSS 像素分辨率绘制，再由 CSS 拉伸到视口：
@@ -101,32 +110,36 @@
     var r = Math.max(48, radius * flick.r);
     var i = flick.i;
 
-    /* 1) 黑暗遮罩：近光透明，远处压暗（保留少量余晖） */
-    /* 1) 黑暗遮罩：近光透明，远处压暗。
-       上限刻意不压到全黑（约 0.62 而非 0.9+）：实测遮罩过重会让远处砖墙
-       亮度掉到 5 以下、纹理完全不可见，与"砖墙背景"的初衷相悖。
-       保留余晖后再由下方的暖光叠加提亮，暗部仍可辨轮廓。 */
-    var dark = g.createRadialGradient(cur.x, cur.y, 0, cur.x, cur.y, r);
-    dark.addColorStop(0.00, "rgba(5,4,3,0.00)");
-    dark.addColorStop(0.34, "rgba(6,4,3,0.07)");
-    dark.addColorStop(0.60, "rgba(5,3,2,0.19)");
-    dark.addColorStop(0.84, "rgba(4,2,1,0.34)");
-    dark.addColorStop(1.00, "rgba(3,2,1,0.48)");
+    /* 1) 铺满纯黑蒙版 */
     g.globalCompositeOperation = "source-over";
-    g.fillStyle = dark;
+    g.fillStyle = "#000";
     g.fillRect(0, 0, W, H);
 
-    /* 2) 暖光叠加：近焰暖白 -> 橙 -> 橙红 */
-    g.globalCompositeOperation = "lighter";
+    /* 2) 挖光洞：destination-out 按衰减曲线擦掉蒙版。
+          stop 的 alpha = 该处被擦掉的比例，1 = 完全透明（全亮），
+          MASK_FAR = 最暗处残留的黑度（1 即纯黑）。 */
+    g.globalCompositeOperation = "destination-out";
+    var hole = g.createRadialGradient(cur.x, cur.y, 0, cur.x, cur.y, r);
+    hole.addColorStop(0.00, "rgba(0,0,0,1)");
+    hole.addColorStop(0.22, "rgba(0,0,0," + (1 - MASK_FAR * 0.04).toFixed(3) + ")");
+    hole.addColorStop(0.42, "rgba(0,0,0," + (1 - MASK_FAR * 0.22).toFixed(3) + ")");
+    hole.addColorStop(0.60, "rgba(0,0,0," + (1 - MASK_FAR * 0.50).toFixed(3) + ")");
+    hole.addColorStop(0.78, "rgba(0,0,0," + (1 - MASK_FAR * 0.78).toFixed(3) + ")");
+    hole.addColorStop(0.92, "rgba(0,0,0," + (1 - MASK_FAR * 0.93).toFixed(3) + ")");
+    hole.addColorStop(1.00, "rgba(0,0,0," + (1 - MASK_FAR).toFixed(3) + ")");
+    g.fillStyle = hole;
+    g.fillRect(0, 0, W, H);
+
+    /* 3) 暖光叠加：近焰暖白 -> 橙 -> 橙红（只落在光洞内） */
+    g.globalCompositeOperation = "source-over";
     var glow = g.createRadialGradient(cur.x, cur.y, 0, cur.x, cur.y, r);
-    glow.addColorStop(0.00, "rgba(255,236,198," + (0.46 * i).toFixed(3) + ")");
-    glow.addColorStop(0.18, "rgba(255,198,112," + (0.32 * i).toFixed(3) + ")");
-    glow.addColorStop(0.45, "rgba(228,122,42," + (0.17 * i).toFixed(3) + ")");
-    glow.addColorStop(0.75, "rgba(150,54,12," + (0.09 * i).toFixed(3) + ")");
-    glow.addColorStop(1.00, "rgba(96,28,6," + (0.035 * i).toFixed(3) + ")");
+    glow.addColorStop(0.00, "rgba(255,236,198," + (0.40 * i).toFixed(3) + ")");
+    glow.addColorStop(0.18, "rgba(255,198,112," + (0.28 * i).toFixed(3) + ")");
+    glow.addColorStop(0.45, "rgba(228,122,42," + (0.15 * i).toFixed(3) + ")");
+    glow.addColorStop(0.75, "rgba(150,54,12," + (0.07 * i).toFixed(3) + ")");
+    glow.addColorStop(1.00, "rgba(96,28,6,0)");
     g.fillStyle = glow;
     g.fillRect(0, 0, W, H);
-    g.globalCompositeOperation = "source-over";
   }
 
   /* ---------------- 画布内部着色（照亮英雄/怪物） ----------------
@@ -139,22 +152,26 @@
     var r = Math.max(48, radius * flick.r);
     var i = flick.i;
 
+    /* 与全屏层同一模型：先用黑色把精灵压暗（压暗量 = 蒙版黑度），
+       再叠加暖光。越远离光源压得越黑，等效"被蒙版遮住"。 */
     ctx.save();
-    /* source-atop：只在已绘制的精灵像素上着色，不影响透明区域 */
     ctx.globalCompositeOperation = "source-atop";
 
+    /* 1) 压暗：alpha = 该处蒙版黑度（1 = 全黑） */
     var dk = ctx.createRadialGradient(lx, ly, 0, lx, ly, r);
-    dk.addColorStop(0.00, "rgba(255,242,214,0.03)");
-    dk.addColorStop(0.42, "rgba(44,20,7,0.30)");
-    dk.addColorStop(0.78, "rgba(10,6,3,0.66)");
-    dk.addColorStop(1.00, "rgba(5,3,2,0.84)");
+    dk.addColorStop(0.00, "rgba(0,0,0,0)");
+    dk.addColorStop(0.30, "rgba(0,0,0," + (MASK_FAR * 0.10).toFixed(3) + ")");
+    dk.addColorStop(0.55, "rgba(0,0,0," + (MASK_FAR * 0.34).toFixed(3) + ")");
+    dk.addColorStop(0.78, "rgba(0,0,0," + (MASK_FAR * 0.66).toFixed(3) + ")");
+    dk.addColorStop(1.00, "rgba(0,0,0," + MASK_FAR.toFixed(3) + ")");
     ctx.fillStyle = dk;
     ctx.fillRect(0, 0, cssW, cssH);
 
+    /* 2) 暖光提亮 */
     var gl = ctx.createRadialGradient(lx, ly, 0, lx, ly, r);
-    gl.addColorStop(0.00, "rgba(255,216,152," + (0.40 * i).toFixed(3) + ")");
-    gl.addColorStop(0.32, "rgba(255,172,82," + (0.22 * i).toFixed(3) + ")");
-    gl.addColorStop(0.68, "rgba(184,72,20,0.05)");
+    gl.addColorStop(0.00, "rgba(255,226,168," + (0.42 * i).toFixed(3) + ")");
+    gl.addColorStop(0.28, "rgba(255,176,88," + (0.24 * i).toFixed(3) + ")");
+    gl.addColorStop(0.62, "rgba(200,86,26," + (0.07 * i).toFixed(3) + ")");
     gl.addColorStop(1.00, "rgba(120,40,10,0)");
     ctx.fillStyle = gl;
     ctx.fillRect(0, 0, cssW, cssH);
