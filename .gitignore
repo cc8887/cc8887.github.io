@@ -1,0 +1,17 @@
+# 调试截图（体积大，不入库）
+tools/_*.png
+_preview.png
+_probe.png
+_shot_*.png
+
+# 临时验证/探针脚本
+_*.js
+_*.py
+!tools/gen_pixel_assets.py
+
+# 本地备份
+_backup_*/
+
+# 忽略备份分支导出物
+.DS_Store
+Thumbs.db
