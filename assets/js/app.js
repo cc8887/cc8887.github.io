@@ -110,7 +110,7 @@
       newKeys: ch.gain ? Object.keys(ch.gain).filter(function (k) { return POOL[k]; }) : [],
       gainList: gainList,
       isFirst: isFirst,
-      prevLabel: prevCh ? prevCh.org + " ・ " + prevCh.role : "初始基准",
+      prevLabel: prevCh ? prevCh.role + " ・ " + prevCh.org : "初始基准",
       power: power,
       powerDelta: isFirst ? 0 : power - prevPower,
       skills: skills,

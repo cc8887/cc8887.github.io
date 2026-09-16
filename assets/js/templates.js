@@ -192,7 +192,7 @@
     return '' +
       '<div class="p-foot">' +
         '<span class="dot"></span>' +
-      '<span class="ch">当前章节：' + esc(ch.org) + " ・ " + esc(ch.role) + "</span>" +
+      '<span class="ch">当前章节：' + esc(ch.role) + " ・ " + esc(ch.org) + "</span>" +
       "</div>";
   }
 

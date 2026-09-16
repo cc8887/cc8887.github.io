@@ -104,7 +104,7 @@ window.REC_POOL = {
    ============================================================ */
 window.CHAPTERS = [
   {
-    id: "ch0", role: "仅有开发热情的萌新", org: "起点", loc: "新手村",
+    id: "ch0", role: "仅有开发热情的萌新", org: "入行起点", loc: "新手村",
     job: "见习冒险者", jobColor: "q1",
     desc: "带着一腔热情踏入开发世界：靠思辨拆解问题，靠学习补齐短板，把热情当作最耐烧的燃料。",
     lv: 12,
@@ -118,7 +118,7 @@ window.CHAPTERS = [
     ]
   },
   {
-    id: "ch1", role: "Unreal 客户端开发", org: "网易", loc: "主线・技能构筑",
+    id: "ch1", role: "网易", org: "Unreal 客户端开发", loc: "主线・技能构筑",
     job: "剑士・客户端", jobColor: "q2",
     desc: "在大型项目中承担客户端技能与玩法开发，从零搭建可复用的技能框架，让后续扩展不必重复造轮子。",
     lv: 32,
@@ -131,7 +131,7 @@ window.CHAPTERS = [
     ]
   },
   {
-    id: "ch2", role: "Unreal 客户端开发", org: "萨罗斯", loc: "主线・性能攻坚",
+    id: "ch2", role: "萨罗斯", org: "Unreal 客户端开发", loc: "主线・性能攻坚",
     job: "狂战士・性能向", jobColor: "q3",
     desc: "深入客户端性能战场：逐帧剖析 CPU/GPU 开销，压 DrawCall、削内存，把卡顿从体验里一点点抠掉。",
     lv: 52,
@@ -145,7 +145,7 @@ window.CHAPTERS = [
     ]
   },
   {
-    id: "ch3", role: "AI 相关工具开发", org: "某厂", loc: "外传・新大陆",
+    id: "ch3", role: "某厂", org: "AI 相关工具开发", loc: "外传・新大陆",
     job: "元素师・AI 炼金", jobColor: "q4",
     desc: "把大模型能力炼成趁手兵器：Agent 编排、知识库检索与工具集成，让 AI 真正嵌进日常研发流程。",
     lv: 74,
