@@ -1,0 +1,30 @@
+/* ============================================================
+   HTML-in-Canvas 增强层样式（实验性）
+   ------------------------------------------------------------
+   只有在 hic-hero.js 判定能力可用后，才会给 hero 加上 .is-fx
+   因此不支持的浏览器里，这些规则不命中任何元素，零副作用
+   ============================================================ */
+
+/* 激活后：hero 自身退化为普通容器，排版职责交给 canvas 内的源节点 */
+.hero.is-fx{
+  display:block;
+  padding:0;
+  min-height:0;
+}
+
+.hero-fx{
+  display:block;
+  width:100%;
+}
+
+/* 承载原 hero 内容：复制 .hero 的排版参数，保证迁移前后视觉一致 */
+.hero-fx-src{
+  width:100%;
+  min-height:74vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:80px 20px 40px;
+}

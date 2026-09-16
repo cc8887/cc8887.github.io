@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>冒险者档案 · 个人主页</title>
+<meta name="description" content="游戏化个人主页：滚动时间轴驱动的数值 / 技能面板">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M5 27 27 5M5 5h22v22' stroke='%23f2c14e' stroke-width='3' fill='none'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/css/main.css" />
+<link rel="stylesheet" href="assets/css/panel.css" />
+<link rel="stylesheet" href="assets/css/wallgame.css" />
+<link rel="stylesheet" href="assets/css/hic.css" />
+</head>
+<body>
+
+<div class="bg-grid" aria-hidden="true"></div>
+<div class="bg-glow" aria-hidden="true"></div>
+
+<div class="expbar" aria-hidden="true"><i id="expFill"></i><span id="expText">EXP 0%</span></div>
+
+<header class="hero" id="hero"></header>
+
+<main class="layout">
+  <div class="col-main">
+    <div class="timeline">
+      <div class="tl-axis"><i id="tlProgress"></i></div>
+      <div class="tl-list" id="chapters"></div>
+    </div>
+  </div>
+
+  <aside class="col-side">
+    <div class="panel-wrap">
+      <div class="dnf-frame panel" id="panel" aria-live="polite">
+        <div class="frame-in"></div>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<footer class="site-foot" id="foot"></footer>
+
+<div class="tip" id="tip" role="tooltip" aria-hidden="true"></div>
+
+<script src="assets/js/data.js" defer></script>
+<script src="assets/js/templates.js" defer></script>
+<script src="assets/js/app.js" defer></script>
+<script src="assets/js/wallgame.js" defer></script>
+<script src="assets/js/hic-hero.js" defer></script>
+</body>
+</html>

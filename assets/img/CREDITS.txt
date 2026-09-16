@@ -1,0 +1,28 @@
+角色像素素材来源与授权
+========================
+
+本目录下所有 PNG 均由 UnitForge Sample Sprite Pack 切片而来。
+
+- 来源：https://opengameart.org/node/192815 （Pixel Chibi Character Pack）
+- 作者：UnitForge（https://unitforge.net）
+- 授权：CC0 1.0 Universal（公有领域）
+  - 可商用、可修改、无需署名
+  - 不可将素材本身作为独立素材包转售
+
+原始规格
+--------
+- 每帧 48×48 px，每行 8 帧
+- 行序：IDLE / MOVE / ATTACK / [武器专属攻击] / DAMAGED / DEATH
+- 锚点：底部居中，地平线位于帧底上方 6px
+
+本项目的切片
+------------
+- hero_idle.png    knight 第 0 行（IDLE）8 帧
+- hero_move.png    knight 第 1 行（MOVE）8 帧
+- hero_attack.png  knight 第 2 行（ATTACK）8 帧
+- mob_idle.png     gunner 第 0 行（IDLE）8 帧
+- mob_move.png     gunner 第 1 行（MOVE）8 帧
+- mob_death.png    gunner 第 5 行（DEATH）8 帧
+
+切片方式：按 48px 网格横向裁切，保持透明通道与像素锐利度
+（渲染时使用 image-rendering: pixelated）。

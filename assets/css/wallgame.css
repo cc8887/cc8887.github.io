@@ -1,0 +1,48 @@
+/* ============================================================
+   壁面守卫战（Wall Defense）
+   ------------------------------------------------------------
+   墙壁 = 数值面板自身的金色边框。
+   画布绝对定位覆盖整个面板，pointer-events:none 不影响交互，
+   英雄立于顶边中央，怪物从底部两侧沿竖边向上爬。
+   ============================================================ */
+
+.wg-canvas{
+  position:absolute;
+  inset:0;
+  z-index:6;              /* 在内容之上、四角装饰之下 */
+  display:block;
+  width:100%; height:100%;
+  pointer-events:none;
+  image-rendering:pixelated;
+  image-rendering:crisp-edges;
+}
+
+/* HUD：低调的街机标签，浮在框内顶部 */
+.wg-hud{
+  position:absolute;
+  left:14px; right:14px; top:12px;
+  z-index:7;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  font:600 9px/1 var(--font);
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  color:var(--ink-faint);
+  pointer-events:none;
+}
+.wg-tag{
+  color:rgba(242,193,78,.55);
+  border:1px solid rgba(242,193,78,.22);
+  padding:3px 7px;
+  border-radius:2px;
+  background:rgba(0,0,0,.35);
+}
+.wg-kills b{
+  color:var(--gold);
+  font-weight:700;
+}
+
+@media (prefers-reduced-motion: reduce){
+  .wg-hud{ opacity:.7; }
+}
