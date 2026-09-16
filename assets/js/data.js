@@ -12,8 +12,8 @@ window.PROFILE = {
   desc: "以工程师的方式拆解问题，以玩家的热情打磨体验。专注 Unreal 客户端、性能优化与 AI 工具链落地。",
   heroTags: [
     { k: "当前等级", v: "Lv.74" },
-    { k: "职业",     v: "引擎炼金术士" },
-    { k: "阵营",     v: "序・工程" }
+    { k: "职业",     v: "AI 炼金术士" },
+    { k: "阵营",     v: "中立守序" }
   ],
   links: [
     { label: "GitHub",   url: "https://github.com/cc8887" },
@@ -105,7 +105,7 @@ window.REC_POOL = {
 window.CHAPTERS = [
   {
     id: "ch0", role: "仅有开发热情的萌新", org: "入行起点", loc: "新手村",
-    job: "见习冒险者", jobColor: "q1",
+    job: "冒险者", jobColor: "q1",
     desc: "带着一腔热情踏入开发世界：靠思辨拆解问题，靠学习补齐短板，把热情当作最耐烧的燃料。",
     lv: 12,
     gain: { coding: 18, learning: 30, debug: 12, delivery: 10 },
@@ -119,7 +119,7 @@ window.CHAPTERS = [
   },
   {
     id: "ch1", role: "网易", org: "Unreal 客户端开发", loc: "主线・技能构筑",
-    job: "剑士・客户端", jobColor: "q2",
+    job: "中级古法炼金术士", jobColor: "q2",
     desc: "在大型项目中承担客户端技能与玩法开发，从零搭建可复用的技能框架，让后续扩展不必重复造轮子。",
     lv: 32,
     gain: { coding: 22, arch: 26, engine: 26, delivery: 16 },
@@ -132,7 +132,7 @@ window.CHAPTERS = [
   },
   {
     id: "ch2", role: "萨罗斯", org: "Unreal 客户端开发", loc: "主线・性能攻坚",
-    job: "狂战士・性能向", jobColor: "q3",
+    job: "高级古法炼金术士", jobColor: "q3",
     desc: "深入客户端性能战场：逐帧剖析 CPU/GPU 开销，压 DrawCall、削内存，把卡顿从体验里一点点抠掉。",
     lv: 52,
     gain: { perf: 36, engine: 24, debug: 22, coding: 14, tooling: 14 },
@@ -146,7 +146,7 @@ window.CHAPTERS = [
   },
   {
     id: "ch3", role: "XX", org: "AI 相关工具开发・性能优化", loc: "外传・新大陆",
-    job: "元素师・AI 炼金", jobColor: "q4",
+    job: "AI 炼金术士", jobColor: "q4",
     desc: "把大模型能力炼成趁手兵器：Agent 编排、知识库检索与工具集成，让 AI 真正嵌进日常研发流程。",
     lv: 74,
     gain: { ai: 44, tooling: 30, arch: 18, learning: 18, product: 14 },
