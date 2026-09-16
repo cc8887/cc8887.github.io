@@ -107,8 +107,29 @@ function mount() {
   var OUT_X = Math.round(30 * CHAR_SCALE);
   var OUT_Y = Math.round(38 * CHAR_SCALE * GROW_MAX);
   var EDGE = 3;                 // 面板金色边框的视觉厚度
+
+  /* 素材实测：脚底位于 row 42，最高头顶位于 row 19（move 帧），
+     故"脚底 -> 头顶"为 23 个源像素。角色以脚底为锚点放大，
+     头顶高出面板顶边的高度 = HEAD_UP * 当前缩放。 */
+  var HEAD_UP = 42 - 19;
+
+  /* 吸附后需在面板上方预留的"不可见"空间：角色画在面板框外侧，
+     若吸附点贴着视口上沿，头顶会被切掉。这里按"升到 3 级"为界
+     ——即 grow = GROW_STEP^3 ——计算头顶高度，并计入升级弹跳峰值。 */
+  var SAFE_LEVEL = 3;
+  var LVUP_BOUNCE = 1.25;          // 与 heroScale 中的弹跳峰值一致
+  var HEADROOM_GAP = 12;           // 呼吸余量
+
+  function applyStickyTop() {
+    var g = Math.min(GROW_MAX, Math.pow(GROW_STEP, SAFE_LEVEL));
+    var need = Math.ceil(HEAD_UP * CHAR_SCALE * g * LVUP_BOUNCE) + HEADROOM_GAP;
+    /* 矮屏保护：预留空间最多占视口 35%，避免面板被顶出视口 */
+    var cap = Math.round((w.innerHeight || 800) * 0.35);
+    d.documentElement.style.setProperty("--wg-sticky-top", Math.min(need, cap) + "px");
+  }
   var ATK_FRAME_DT = 0.1 / 3;   // 攻击动画加快 3 倍（0.1s -> 0.0333s）
   var ATK_CD = 0.35;            // 攻击冷却，配合更快的挥砍
+
   var hero = null, mobs = [], fx = [];
   var spawnTimer = 0, running = false, last = 0, raf = 0;
   var kills = 0;
@@ -136,6 +157,8 @@ function mount() {
     /* 路径贴合面板框外沿线；外扩留白已提供绘制空间，无需再内缩 */
     PAD = 0;
     if (hero) hero.x = W / 2;
+
+    applyStickyTop();
   }
 
   function makeHero() {
@@ -420,7 +443,7 @@ function mount() {
   }
   w.addEventListener("scroll", onScroll, { passive: true });
 
-  w.addEventListener("resize", function () { if (hero) resize(); });
+  w.addEventListener("resize", function () { if (hero) resize(); applyStickyTop(); });
 
   /* 面板重绘后尺寸可能变化，用 ResizeObserver 同步 */
   if ("ResizeObserver" in w) {

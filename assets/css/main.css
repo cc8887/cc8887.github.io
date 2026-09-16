@@ -135,10 +135,13 @@ ul{ margin:0; padding:0; list-style:none; }
   align-items:start;
 }
 .col-main{ min-width:0; width:var(--main-w); }
-/* 右栏与左栏并列，仅在栅格内 sticky，不脱离文档流 */
+/* 右栏与左栏并列，仅在栅格内 sticky，不脱离文档流。
+   --wg-sticky-top 由 wallgame.js 按角色最大尺寸计算：吸附后其上方
+   留出一段不可见空间，作为画在面板框【外侧】的角色的显示区域，
+   避免英雄放大后被视口上沿切掉头部。 */
 .col-side{
   position:sticky;
-  top:8px;
+  top:var(--wg-sticky-top, 8px);
   align-self:start;
   z-index:30;
 }
