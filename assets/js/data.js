@@ -145,7 +145,7 @@ window.CHAPTERS = [
     ]
   },
   {
-    id: "ch3", role: "某厂", org: "AI 相关工具开发", loc: "外传・新大陆",
+    id: "ch3", role: "XX", org: "AI 相关工具开发・性能优化", loc: "外传・新大陆",
     job: "元素师・AI 炼金", jobColor: "q4",
     desc: "把大模型能力炼成趁手兵器：Agent 编排、知识库检索与工具集成，让 AI 真正嵌进日常研发流程。",
     lv: 74,
