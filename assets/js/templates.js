@@ -51,7 +51,6 @@
         '<span class="node-dot"></span>' +
         '<div class="node-card">' +
           '<div class="node-head">' +
-            '<span class="node-year">' + esc(ch.year) + "</span>" +
             '<h3 class="node-role">' + esc(ch.role) + "</h3>" +
             '<span class="node-org">' + esc(ch.org) + '<span class="sep">/</span>' + esc(ch.loc) + "</span>" +
           "</div>" +
@@ -193,7 +192,7 @@
     return '' +
       '<div class="p-foot">' +
         '<span class="dot"></span>' +
-        '<span class="ch">当前章节：' + esc(ch.year) + " ・ " + esc(ch.role) + "</span>" +
+      '<span class="ch">当前章节：' + esc(ch.org) + " ・ " + esc(ch.role) + "</span>" +
       "</div>";
   }
 

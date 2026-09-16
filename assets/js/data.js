@@ -5,19 +5,19 @@
    ============================================================ */
 
 window.PROFILE = {
-  name: "你的名字",
-  enName: "YOUR NAME",
-  title: "全栈 / 游戏开发工程师",
+  name: "cc8887",
+  enName: "CC8887",
+  title: "游戏客户端 / AI 工具开发",
   avatarText: "★",
-  desc: "以工程师的方式拆解问题，以玩家的热情打磨体验。专注游戏客户端、引擎工具链与 AI 工程化落地。",
+  desc: "以工程师的方式拆解问题，以玩家的热情打磨体验。专注 Unreal 客户端、性能优化与 AI 工具链落地。",
   heroTags: [
-    { k: "当前等级", v: "Lv.87" },
+    { k: "当前等级", v: "Lv.74" },
     { k: "职业",     v: "引擎炼金术士" },
     { k: "阵营",     v: "序・工程" }
   ],
   links: [
-    { label: "GitHub",   url: "https://github.com/" },
-    { label: "邮箱",     url: "mailto:you@example.com" },
+    { label: "GitHub",   url: "https://github.com/cc8887" },
+    { label: "邮箱",     url: "mailto:qq727626166@gmail.com" },
     { label: "博客",     url: "#" }
   ],
   footNote: "本页为个人展示用途，数值设定为游戏化表达，非真实绩效指标。"
@@ -104,86 +104,58 @@ window.REC_POOL = {
    ============================================================ */
 window.CHAPTERS = [
   {
-    id: "ch0", year: "2016", role: "启程・实习生", org: "某某科技", loc: "校园副本",
-    job: "见习程序员", jobColor: "q1",
-    desc: "第一次把课程作业级别的代码推进真实仓库，学会了「能被别人维护」才是好代码。",
+    id: "ch0", role: "仅有开发热情的萌新", org: "起点", loc: "新手村",
+    job: "见习冒险者", jobColor: "q1",
+    desc: "带着一腔热情踏入开发世界：靠思辨拆解问题，靠学习补齐短板，把热情当作最耐烧的燃料。",
     lv: 12,
     gain: { coding: 18, learning: 30, debug: 12, delivery: 10 },
     skills: ["s_git", "s_python"],
     recs: ["r_dun_intro", "r_job_fe"],
     tags: [
-      { t: "版本控制入门", q: 1 },
-      { t: "脚本自动化",   q: 1 }
+      { t: "思辨能力", q: 1 },
+      { t: "学习能力", q: 1 },
+      { t: "100x热情", q: 2 }
     ]
   },
   {
-    id: "ch1", year: "2017 — 2018", role: "初级开发工程师", org: "某某网络", loc: "主线・业务迭代",
-    job: "剑士・业务向", jobColor: "q2",
-    desc: "高强度业务需求打磨编码手感，开始接触性能优化与线上问题排查，形成自己的调试方法论。",
-    lv: 26,
-    gain: { coding: 20, debug: 22, perf: 14, delivery: 14, product: 12 },
-    skills: ["s_csharp", "s_agile", "s_data"],
+    id: "ch1", role: "Unreal 客户端开发", org: "网易", loc: "主线・技能构筑",
+    job: "剑士・客户端", jobColor: "q2",
+    desc: "在大型项目中承担客户端技能与玩法开发，从零搭建可复用的技能框架，让后续扩展不必重复造轮子。",
+    lv: 32,
+    gain: { coding: 22, arch: 26, engine: 26, delivery: 16 },
+    skills: ["s_cpp", "s_unreal", "s_design"],
     recs: ["r_dun_bug", "r_job_client"],
     tags: [
-      { t: "业务迭代",   q: 1 },
-      { t: "线上排查",   q: 2 },
-      { t: "性能初探",   q: 2 }
+      { t: "技能开发", q: 2 },
+      { t: "框架搭建", q: 3 }
     ]
   },
   {
-    id: "ch2", year: "2019 — 2020", role: "游戏客户端工程师", org: "某某游戏", loc: "主线・引擎副本",
-    job: "狂战士・客户端", jobColor: "q3",
-    desc: "深入引擎层与渲染管线，负责核心玩法模块与性能攻坚，开始为团队编写编辑器工具。",
-    lv: 41,
-    gain: { engine: 34, perf: 28, coding: 14, arch: 18, tooling: 20 },
-    skills: ["s_cpp", "s_unreal", "s_perf", "s_tool", "s_shader"],
-    recs: ["r_dun_perf", "r_job_engine", "r_job_ta"],
+    id: "ch2", role: "Unreal 客户端开发", org: "萨罗斯", loc: "主线・性能攻坚",
+    job: "狂战士・性能向", jobColor: "q3",
+    desc: "深入客户端性能战场：逐帧剖析 CPU/GPU 开销，压 DrawCall、削内存，把卡顿从体验里一点点抠掉。",
+    lv: 52,
+    gain: { perf: 36, engine: 24, debug: 22, coding: 14, tooling: 14 },
+    skills: ["s_perf", "s_shader", "s_tool"],
+    recs: ["r_dun_perf", "r_job_engine"],
     tags: [
-      { t: "渲染管线",   q: 3 },
-      { t: "内存优化",   q: 3 },
-      { t: "编辑器扩展", q: 2 }
+      { t: "性能优化", q: 3 },
+      { t: "渲染管线", q: 3 },
+      { t: "内存治理", q: 3 }
     ]
   },
   {
-    id: "ch3", year: "2021 — 2022", role: "高级开发 / 小组长", org: "某某互娱", loc: "主线・攻坚团本",
-    job: "圣骑士・攻坚组长", jobColor: "q3",
-    desc: "带 4 人小组负责一个完整子系统，建立代码审查规范与质量门禁，推动遗留模块平稳重构。",
-    lv: 58,
-    gain: { lead: 30, arch: 24, debug: 14, delivery: 16, product: 16 },
-    skills: ["s_review", "s_lead", "s_mentor", "s_design", "s_ci"],
-    recs: ["r_dun_refac", "r_dun_cross", "r_job_arch"],
-    tags: [
-      { t: "团队带教",   q: 3 },
-      { t: "质量门禁",   q: 3 },
-      { t: "重构落地",   q: 3 }
-    ]
-  },
-  {
-    id: "ch4", year: "2023 — 2024", role: "技术专家 / AI 工程化", org: "某某科技", loc: "外传・新大陆",
+    id: "ch3", role: "AI 相关工具开发", org: "某厂", loc: "外传・新大陆",
     job: "元素师・AI 炼金", jobColor: "q4",
-    desc: "把大模型能力接进研发流程：多智能体编排、知识库检索、批量审查与提示词流水线，形成可复用的工具资产。",
-    lv: 73,
-    gain: { ai: 42, tooling: 24, arch: 16, learning: 18, product: 14 },
+    desc: "把大模型能力炼成趁手兵器：Agent 编排、知识库检索与工具集成，让 AI 真正嵌进日常研发流程。",
+    lv: 74,
+    gain: { ai: 44, tooling: 30, arch: 18, learning: 18, product: 14 },
     skills: ["s_agent", "s_rag", "s_prompt", "s_mcp"],
     recs: ["r_dun_ai", "r_dun_tool", "r_job_ai"],
     tags: [
-      { t: "多智能体",   q: 4 },
-      { t: "MCP 工具",   q: 4 },
-      { t: "知识库检索", q: 3 }
-    ]
-  },
-  {
-    id: "ch5", year: "2025 — 至今", role: "技术负责人", org: "现任", loc: "终章・主线 boss",
-    job: "英雄・技术统帅", jobColor: "q5",
-    desc: "负责一条完整业务线的技术方案与团队交付，同时持续经营独立项目与个人技术品牌。",
-    lv: 87,
-    gain: { lead: 22, arch: 18, product: 20, delivery: 14, ai: 12, art: 20, coding: 10 },
-    skills: ["s_godot", "s_anim", "s_lua"],
-    recs: ["r_dun_boss", "r_job_lead", "r_job_tool"],
-    tags: [
-      { t: "技术负责",   q: 4 },
-      { t: "独立项目",   q: 3 },
-      { t: "品牌经营",   q: 3 }
+      { t: "AI 工具开发", q: 4 },
+      { t: "Agent 编排",  q: 4 },
+      { t: "MCP 集成",    q: 4 }
     ]
   }
 ];
