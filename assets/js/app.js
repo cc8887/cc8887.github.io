@@ -27,12 +27,8 @@
   var curState = null;
   var rafPending = false;
 
-  /* 尾段判定线收缩：滚动进度超过 TAIL_START 后，判定线由视口 45%
-     渐变为 TAIL_LINE，使页面尾部节点也能逐个触发（详见 measure）。
-     若把 TAIL_START 设为 1 即完全关闭该修正。 */
-  var TAIL_START = 0.55;   // 尾段起点（滚动进度）
-  var TAIL_LINE = 0.06;    // 滚到底时判定线的位置（视口高比例）
-  function easeInOut(p) { return p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2; }
+  /* 触发判定线（视口比例）：节点顶边越过此线即点亮该章 */
+  var LINE_RATIO = 0.45;
 
   /* 快照：依次算出每一章的累积属性，便于任意两章之间做 diff */
   var SNAPS = [];
@@ -181,32 +177,54 @@
     var vh = w.innerHeight || d.documentElement.clientHeight;
     var nodes = el.chapters.children;
 
-    /* 以视口 45% 位置作为判定线 */
-    var line = vh * 0.45;
-
-    /* 页面滚到底后，尾部若干节点的触发点会落在可滚动范围之外
-       （它们本该在更长的页面里才滚到判定线），于是永远触发不了，
-       只能靠下面的"滚到底"兜底一次性点亮 —— 表现为最后两个节点
-       同时出现。这里把判定线在页面尾段随滚动进度上移，把这部分
-       行程压缩进实际可滚动范围内，让尾部节点仍逐个触发。 */
+    /* 触发判定：节点顶边越过判定线即点亮该章。
+       问题根源 —— 页面可滚动距离有限，靠后的节点"顶边到达判定线"
+       所需的 scrollY 会超出可滚动范围，它们永远触发不了，只能靠
+       下面的"滚到底"兜底一次性全部点亮，表现为最后几章同时出现。
+       修法：先算出每个节点【理想触发点】（文档坐标 − 判定线），
+       再把超出可滚动范围的尾部节点，按原有间隔比例压缩进尾段
+       剩余行程，使其仍在各自不同的 scrollY 上逐个触发。 */
     var maxScroll = Math.max(1, d.documentElement.scrollHeight - vh);
     var y = w.scrollY || d.documentElement.scrollTop || 0;
-    var tail = Math.max(0, Math.min(1, (y - maxScroll * TAIL_START) /
-      Math.max(1, maxScroll * (1 - TAIL_START))));
-    line = line - (line - vh * TAIL_LINE) * easeInOut(tail);
+    var i;
 
-    var activeIdx = 0;
-    for (var i = 0; i < nodes.length; i++) {
-      if (nodes[i].getBoundingClientRect().top <= line) activeIdx = i;
+    /* 1) 理想触发点：nodeTop(文档坐标) - line */
+    var need = [];
+    for (i = 0; i < nodes.length; i++) {
+      need.push(nodes[i].getBoundingClientRect().top + y - vh * LINE_RATIO);
     }
 
-    /* 滚到最底部时强制最后一章 */
+    /* 2) 找第一个超出可滚动范围的节点 k，把 [k, n-1] 压缩进
+          (need[k-1], maxScroll] 这段剩余行程；压缩时保持相对间隔。 */
+    var k = -1;
+    for (i = 0; i < need.length; i++) { if (need[i] > maxScroll) { k = i; break; } }
+    if (k > 0) {
+      var room = maxScroll - need[k - 1];        // 尾段可用行程
+      var span = need[need.length - 1] - need[k - 1];  // 原本需要的行程
+      if (room > 0 && span > 0) {
+        for (i = k; i < need.length; i++) {
+          need[i] = need[k - 1] + room * ((need[i] - need[k - 1]) / span);
+        }
+      }
+    } else if (k === 0) {
+      /* 连第一个节点都够不到（极短页面）：全部均匀摊开 */
+      for (i = 0; i < need.length; i++) {
+        need[i] = maxScroll * ((i + 1) / need.length);
+      }
+    }
+
+    /* 3) 以重映射后的触发点判定当前激活章 */
+    var activeIdx = 0;
+    for (i = 0; i < need.length; i++) { if (y >= need[i]) activeIdx = i; }
+
+    /* 滚到最底部时强制最后一章（兜底，正常路径下已能自然到达） */
     if (w.innerHeight + w.scrollY >= d.body.offsetHeight - 4) {
       activeIdx = nodes.length - 1;
     }
     setActive(activeIdx);
 
-    /* 时间轴进度 */
+    /* 时间轴进度（仍按原始判定线，与视觉进度保持一致） */
+    var line = vh * LINE_RATIO;
     var first = nodes[0], last = nodes[nodes.length - 1];
     if (first && last) {
       var start = first.offsetTop + first.offsetHeight / 2;
