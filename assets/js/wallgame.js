@@ -115,8 +115,8 @@ function mount() {
 
   /* 吸附后需在面板上方预留的"不可见"空间：角色画在面板框外侧，
      若吸附点贴着视口上沿，头顶会被切掉。这里按"升到 3 级"为界
-     ——即 grow = GROW_STEP^3 ——计算头顶高度，并计入升级弹跳峰值。 */
-  var SAFE_LEVEL = 3;
+     ——即 grow = GROW_STEP^6 ——计算头顶高度，并计入升级弹跳峰值。 */
+  var SAFE_LEVEL = 6;
   var LVUP_BOUNCE = 1.25;          // 与 heroScale 中的弹跳峰值一致
   var HEADROOM_GAP = 12;           // 呼吸余量
 
@@ -125,8 +125,19 @@ function mount() {
     var need = Math.ceil(HEAD_UP * CHAR_SCALE * g * LVUP_BOUNCE) + HEADROOM_GAP;
     /* 矮屏保护：预留空间最多占视口 35%，避免面板被顶出视口 */
     var cap = Math.round((w.innerHeight || 800) * 0.35);
-    d.documentElement.style.setProperty("--wg-sticky-top", Math.min(need, cap) + "px");
+    var top = Math.min(need, cap);
+    /* sticky 元素无法越过其容器内容盒的底边。滚到页面底部时容器剩余
+       高度变小，面板会被顶上去，此时无论吸顶值多大，头顶都可能被切。
+       故按容器实时的可用高度反向钳制，保证"面板顶 + 头顶高度"仍在视口内。 */
+    var host = d.querySelector(".col-side");
+    if (host && host.parentElement) {
+      var box = host.parentElement.getBoundingClientRect();
+      var avail = box.bottom - host.offsetHeight;
+      if (avail < top) top = Math.max(0, Math.floor(avail));
+    }
+    d.documentElement.style.setProperty("--wg-sticky-top", top + "px");
   }
+
   var ATK_FRAME_DT = 0.1 / 3;   // 攻击动画加快 3 倍（0.1s -> 0.0333s）
   var ATK_CD = 0.35;            // 攻击冷却，配合更快的挥砍
 
@@ -444,6 +455,7 @@ function mount() {
   w.addEventListener("scroll", onScroll, { passive: true });
 
   w.addEventListener("resize", function () { if (hero) resize(); applyStickyTop(); });
+  w.addEventListener("scroll", applyStickyTop, { passive: true });
 
   /* 面板重绘后尺寸可能变化，用 ResizeObserver 同步 */
   if ("ResizeObserver" in w) {

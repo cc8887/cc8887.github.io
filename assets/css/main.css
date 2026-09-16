@@ -129,7 +129,11 @@ ul{ margin:0; padding:0; list-style:none; }
 /* ---------- 主布局 ---------- */
 .layout{
   position:relative; z-index:1;
-  max-width:1420px; margin:0 auto; padding:0 20px 100px;
+  max-width:1420px; margin:0 auto;
+  /* 底部内边距必须尽量小：滚到底部时布局底边被 footer 锁死，而
+     sticky 元素不能越过容器内容盒底边（= 布局底边 − padding-bottom）。
+     padding 越大，面板被顶得越高、框外侧角色越容易被切头。 */
+  padding:0 20px 24px;
   display:grid; grid-template-columns:var(--main-w) var(--panel-w);
   justify-content:center; gap:28px;
   align-items:start;
