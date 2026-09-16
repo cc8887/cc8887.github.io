@@ -70,10 +70,6 @@
         basic(st, ch) +
         power(st) +
         bars(st) +
-        attrs(st) +
-        gains(st) +
-        skills(st) +
-        recs(st) +
         foot(ch) +
       "</div>";
   }
@@ -109,40 +105,6 @@
       "</div>";
   }
 
-  /* 较上一份提升：只列"有提升"的项，按增量降序 */
-  function gains(st) {
-    var list = st.gainList || [];
-    var title = st.isFirst ? "初始能力" : "较上一份提升";
-
-    if (!list.length) {
-      return '' +
-        '<section class="sec">' +
-          '<h4 class="sec-h">' + title + '<span class="cnt">0 项</span></h4>' +
-          '<div class="sec-sub">本阶段无新增数值成长</div>' +
-        "</section>";
-    }
-
-    var maxD = list.reduce(function (m, g) { return Math.max(m, g.delta); }, 1);
-
-    var html = list.map(function (g) {
-      var pct = Math.max(6, Math.round(g.delta / maxD * 100));
-      return '' +
-        '<div class="gain" data-attr="' + esc(g.key) + '">' +
-          '<span class="gk">' + esc(POOL[g.key].label) + "</span>" +
-          '<span class="gp">' + g.prev + "<i>→</i><b>" + g.now + "</b></span>" +
-          '<span class="gb"><i data-pct="' + pct + '"></i></span>' +
-          '<span class="gd">+' + g.delta + "</span>" +
-        "</div>";
-    }).join("");
-
-    return '' +
-      '<section class="sec">' +
-        '<h4 class="sec-h">' + title + '<span class="cnt">' + list.length + " 项</span></h4>" +
-        '<div class="sec-sub">对比基准：' + esc(st.prevLabel || "上一份") + "</div>" +
-        '<div class="gains">' + html + "</div>" +
-      "</section>";
-  }
-
   function bars(st) {
     return '' +
       '<div class="p-bars">' +
@@ -157,41 +119,6 @@
           '<span class="vl">' + st.mp + " / " + st.mpMax + "</span>" +
         "</div>" +
       "</div>";
-  }
-
-  /* 数值条目：只显示已解锁（累积值 > 0）的属性，并标出本阶段增量 */
-  function attrs(st) {
-    var keys = Object.keys(st.attrs);
-    var html = keys.map(function (k) {
-      var a = POOL[k];
-      if (!a) return "";
-      var v = st.attrs[k];
-      var prev = st.prevAttrs[k] || 0;
-      var isNew = st.newKeys.indexOf(k) >= 0;
-      var delta = v - prev;
-      var q = v >= 80 ? 4 : v >= 55 ? 3 : 1;
-
-      var badge = isNew
-        ? '<span class="up new">新 +' + v + "</span>"
-        : delta > 0
-          ? '<span class="up">↑' + delta + "</span>"
-          : '<span class="up zero">—</span>';
-
-      return '' +
-        '<div class="attr ' + qClass(q) + (isNew ? " is-new" : "") + '" ' +
-             'data-attr="' + esc(k) + '">' +
-          '<span class="k">' + esc(a.label) + "</span>" +
-          '<span class="dots"></span>' +
-          '<span class="v">' + v + "</span>" +
-          badge +
-        "</div>";
-    }).join("");
-
-    return '' +
-      '<section class="sec">' +
-        '<h4 class="sec-h">能力值<span class="cnt">' + keys.length + " 项</span></h4>" +
-        '<div class="attrs">' + html + "</div>" +
-      "</section>";
   }
 
   /* 技能栏：已解锁 + 固定空槽（体现"栏位变多"） */
