@@ -2,16 +2,17 @@
    壁面守卫战（Wall Defense）
    ------------------------------------------------------------
    墙壁 = 数值面板自身的金色边框。
-   画布绝对定位覆盖整个面板，pointer-events:none 不影响交互，
-   英雄立于顶边中央，怪物从底部两侧沿竖边向上爬。
+   角色绘制在框的【外侧】：英雄立于顶边外的墙头，脚底压住顶边线；
+   怪物自底部两侧沿外侧竖边向上爬。画布挂在 .col-side 并向外扩展留白。
    ============================================================ */
 
+/* 画布挂在 .col-side 并向四周扩展，使角色能绘制在面板框的外侧
+   （#panel / .panel-wrap 均有裁剪，无法作为挂载点） */
 .wg-canvas{
   position:absolute;
-  inset:0;
-  z-index:6;              /* 在内容之上、四角装饰之下 */
+  /* left/top 由 JS 按 CHAR_SCALE 动态设置（30*scale / 38*scale），此处不硬编码 */
+  z-index:40;
   display:block;
-  width:100%; height:100%;
   pointer-events:none;
   image-rendering:pixelated;
   image-rendering:crisp-edges;

@@ -142,9 +142,10 @@ ul{ margin:0; padding:0; list-style:none; }
   align-self:start;
   z-index:30;
 }
+/* 画布的定位上下文；overflow:visible 以允许角色绘制在面板框外侧 */
 .col-side .panel-wrap{
   position:relative;
-  overflow-y:auto;
+  overflow:visible;
   overscroll-behavior:contain;
   scrollbar-width:thin;
   scrollbar-color:var(--gold-deep) transparent;

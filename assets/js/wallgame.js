@@ -13,6 +13,7 @@
 
   var FRAME = document.getElementById("panel");
   if (!FRAME) return;
+  var SIDE = document.querySelector(".col-side") || FRAME;
 
   var cvs = document.createElement("canvas");
   cvs.id = "wallgame";
@@ -24,9 +25,12 @@
   HUD.innerHTML = '<span class="wg-tag">WALL DEFENSE</span>' +
     '<span class="wg-kills">击杀 <b id="wgKills">0</b></span>';
 
-  function mount() {
-    if (cvs.parentNode !== FRAME) FRAME.appendChild(cvs);
+function mount() {
+    /* 画布必须挂在 .col-side：#panel 与 .panel-wrap 都有裁剪，
+       挂在面板内无法把角色画到框的外侧 */
+    if (cvs.parentNode !== SIDE) SIDE.appendChild(cvs);
     if (HUD.parentNode !== FRAME) FRAME.appendChild(HUD);
+    if (getComputedStyle(SIDE).position === "static") SIDE.style.position = "relative";
   }
   mount();
 
@@ -54,32 +58,51 @@
     img.src = "assets/img/" + pair[0] + "_" + pair[1] + ".png";
   });
 
-  /* ---------- 几何：一条沿边框的路径 ---------- */
-  // 参数 s ∈ [0,1]：0 = 左下起点，1 = 顶边中央（英雄处）
-  // 路径：左下 -> 左上 -> 顶边 -> 中央（左侧）；右侧镜像
+  /* ---------- 几何：沿面板框【外侧】边线的路径 ----------
+     画布坐标 = 面板框坐标 + (OUT_X, OUT_Y)
+     · l/r/t/b：框的四条外沿边线（角色脚底/身体所贴的线）
+     · s ∈ [0,1]：0 = 底部转角，1 = 顶边中央（英雄处）
+     路线：底边 -> 沿外侧竖边向上 -> 顶边 -> 中央（右侧镜像） */
   function pathPoint(s, side, pad) {
-    var W = cvs.width / DPR, H = cvs.height / DPR;
-    var left = pad, right = W - pad, top = pad, bottom = H - pad;
-    var midX = (left + right) / 2;
-    var upLen = bottom - top;
-    var topLen = midX - left;
+    var l = OUT_X + pad, r = W - OUT_X - pad;
+    var t = OUT_Y + pad, b = H - OUT_Y - pad;
+    var midX = (l + r) / 2;
+    var upLen = b - t;
+    var topLen = midX - l;
     var total = upLen + topLen;
     var dist = s * total;
 
     if (dist <= upLen) {
-      // 沿竖边向上
-      var x = side < 0 ? left : right;
-      return { x: x, y: bottom - dist, up: true };
+      return { x: side < 0 ? l : r, y: b - dist, up: true };
     }
-    // 折向顶边中央
-    var t = dist - upLen;
-    var y = top;
-    var xx = side < 0 ? left + t : right - t;
-    return { x: xx, y: y, up: false };
+    var k = dist - upLen;
+    return { x: side < 0 ? l + k : r - k, y: t, up: false };
+  }
+
+  /* 单侧路径总长（像素） */
+  function pathLen(pad) {
+    var l = OUT_X + pad, r = W - OUT_X - pad;
+    var t = OUT_Y + pad, b = H - OUT_Y - pad;
+    return (b - t) + ((l + r) / 2 - l);
+  }
+
+  /* 按"距终点的像素距离"求路径进度：怪物停在离英雄 d 像素处 */
+  function sAtDistance(d, pad) {
+    var total = pathLen(pad);
+    var s = (total - d) / total;
+    return s < 0 ? 0 : (s > 1 ? 1 : s);
   }
 
   var DPR = 1;
   var W = 0, H = 0, PAD = 0;
+  /* 角色基础缩放：5 倍 */
+  var CHAR_SCALE = 5;
+  /* 画布相对面板框向外的留白：需容纳放大后的角色，随 CHAR_SCALE 联动 */
+  var OUT_X = Math.round(30 * CHAR_SCALE);
+  var OUT_Y = Math.round(38 * CHAR_SCALE);
+  var EDGE = 3;                 // 面板金色边框的视觉厚度
+  var ATK_FRAME_DT = 0.1 / 3;   // 攻击动画加快 3 倍（0.1s -> 0.0333s）
+  var ATK_CD = 0.35;            // 攻击冷却，配合更快的挥砍
   var hero = null, mobs = [], fx = [];
   var spawnTimer = 0, running = false, last = 0, raf = 0;
   var kills = 0;
@@ -90,22 +113,29 @@
     DPR = Math.min(w.devicePixelRatio || 1, 2);
     var inner = host.querySelector(".p-inner");
     var contentH = inner ? inner.offsetHeight : r.height;
-    W = Math.max(240, Math.round(r.width));
-    H = Math.max(120, Math.round(Math.max(r.height, contentH)));
+    var panelW = Math.max(240, Math.round(r.width));
+    var panelH = Math.max(120, Math.round(Math.max(r.height, contentH)));
+    /* 画布 = 面板框 + 四周留白 */
+    W = panelW + OUT_X * 2;
+    H = panelH + OUT_Y * 2;
     cvs.width = Math.round(W * DPR);
     cvs.height = Math.round(H * DPR);
-    cvs.style.width = "100%";
-    cvs.style.height = Math.round(H) + "px";
+    cvs.style.width = W + "px";
+    cvs.style.height = H + "px";
+    /* 位置由 JS 统一设置，避免与 CSS 硬编码失配 */
+    cvs.style.left = (-OUT_X) + "px";
+    cvs.style.top = (-OUT_Y) + "px";
     g.setTransform(DPR, 0, 0, DPR, 0, 0);
     g.imageSmoothingEnabled = false;
-    PAD = 14;
+    /* 路径贴合面板框外沿线；外扩留白已提供绘制空间，无需再内缩 */
+    PAD = 0;
     if (hero) hero.x = W / 2;
   }
 
   function makeHero() {
-    /* 站在"墙头"：顶边略上方，脚底压住顶边 */
+    /* 站在顶边【外侧】的墙头上，脚底正好压住顶边外沿线 */
     return {
-      x: W / 2, y: PAD + FH * 0.30,
+      x: W / 2, y: OUT_Y + PAD,
       state: "idle", frame: 0, t: 0, face: 1, atkCd: 0
     };
   }
@@ -118,6 +148,9 @@
     });
   }
 
+  /* 实测：所有素材的脚底像素位于 y=42，即距帧底 5px（48-42-1） */
+  var FOOT_GAP = 5;
+
   function drawSprite(sheet, frame, cx, cy, scale, flip) {
     if (!sheet) return;
     var sw = FW, sh = FH;
@@ -126,7 +159,9 @@
     g.translate(cx, cy);
     if (flip) g.scale(-1, 1);
     g.imageSmoothingEnabled = false;
-    g.drawImage(sheet, frame * sw, 0, sw, sh, -dw / 2, -dh, dw, dh);
+    /* 帧底下移 FOOT_GAP*scale，使"脚底"而非"帧底"落在 (cx,cy) 这条线上 */
+    g.drawImage(sheet, frame * sw, 0, sw, sh,
+      -dw / 2, -dh + FOOT_GAP * scale, dw, dh);
     g.restore();
   }
 
@@ -152,7 +187,8 @@
     /* 英雄 */
     hero.t += dt;
     if (hero.state === "attack") {
-      if (hero.t >= 0.1) {
+      /* 攻击动画加快 3 倍：帧间隔 0.1s -> 0.0333s */
+      if (hero.t >= ATK_FRAME_DT) {
         hero.t = 0;
         hero.frame++;
         if (hero.frame >= 8) { hero.state = "idle"; hero.frame = 0; }
@@ -164,23 +200,34 @@
     }
     if (hero.atkCd > 0) hero.atkCd -= dt;
 
-    /* 怪物 */
-    var heroReach = 0.86;   // 到达该进度即进入英雄攻击范围
+    /* 怪物：贴到离英雄"一个身位"处即停下，不会绕到英雄另一侧
+       实测素材实际身体宽度约 19px/帧（48px 帧内两侧留白），
+       放大 CHAR_SCALE 后即 BODY_W；一个身位 = 一个身体宽度 */
+    var BODY_W = 19 * CHAR_SCALE;                 // 实测身体宽度（约 95px）
+    var stopDist = Math.max(BODY_W, 40);          // 身位间距 = 一个身位
+    var heroReach = sAtDistance(stopDist, PAD);   // 对应路径进度（不再用固定 0.86）
     for (var i = mobs.length - 1; i >= 0; i--) {
       var m = mobs[i];
       m.t += dt;
 
       if (m.state === "move") {
-        m.s += m.speed * dt;
-        if (m.t >= 0.11) { m.t = 0; m.frame = (m.frame + 1) % 8; }
+        /* 到达身位就停住；只有进入攻击范围且英雄可出手时才判定 */
+        if (m.s < heroReach) {
+          m.s += m.speed * dt;
+          if (m.s > heroReach) m.s = heroReach;   // 夹住，绝不越过英雄
+          if (m.t >= 0.11) { m.t = 0; m.frame = (m.frame + 1) % 8; }
+        } else {
+          /* 已贴身：停下（保留待机帧循环），等待英雄出手 */
+          if (m.t >= 0.18) { m.t = 0; m.frame = (m.frame + 1) % 8; }
+        }
         if (m.s >= heroReach) {
-          // 进入攻击范围：英雄转身 + 播放攻击
+          // 进入一个身位：英雄转身 + 播放攻击
           hero.face = m.side;
           if (hero.state !== "attack" && hero.atkCd <= 0) {
             hero.state = "attack";
             hero.frame = 0;
             hero.t = 0;
-            hero.atkCd = 0.6;
+            hero.atkCd = ATK_CD;
             m.state = "dying";
             m.deadT = 0.75;
             fx.push({ x: 0, y: 0, t: 0, life: 0.35, side: m.side });
@@ -209,7 +256,8 @@
   function render() {
     g.clearRect(0, 0, W, H);
 
-    var scale = H > 200 ? 1.15 : 0.95;
+    /* 角色统一放大 5 倍 */
+    var scale = CHAR_SCALE;
 
     /* 怪物（先画，让英雄压在上面） */
     for (var i = 0; i < mobs.length; i++) {
@@ -219,13 +267,14 @@
       var fr = m.state === "dying" ? m.frame : m.frame;
       // 爬墙时轻微起伏
       var bob = m.state === "move" ? Math.sin(m.t * 8 + m.wob) * 1.5 : 0;
-      drawSprite(sheet, fr, p.x, p.y + bob, scale, m.side > 0);
+      /* 素材默认朝左：怪物自左侧上爬时向右（朝中央）需翻转 */
+      drawSprite(sheet, fr, p.x, p.y + bob, scale, m.side < 0);
     }
 
-    /* 英雄 */
+    /* 英雄：素材默认朝左，face=-1(朝左) 不翻转，face=+1(朝右) 翻转 */
     var hSheet = hero.state === "attack" ? ART.hero.attack
       : hero.state === "idle" ? ART.hero.idle : ART.hero.move;
-    drawSprite(hSheet, hero.frame, hero.x, hero.y, scale, hero.face < 0);
+    drawSprite(hSheet, hero.frame, hero.x, hero.y, scale, hero.face > 0);
 
     /* 命中特效：金色扩散环 */
     for (var k = 0; k < fx.length; k++) {
