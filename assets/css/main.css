@@ -37,6 +37,14 @@
 
   --font: "Segoe UI", "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", system-ui, sans-serif;
   --font-num: "Consolas", "SF Mono", "Cascadia Mono", ui-monospace, monospace;
+
+  /* 2D 光照分层（后续接入光照时直接引用）
+     受光对象：砖墙背景、英雄、怪物 —— z-index 低于 --z-light
+     不受光对象：所有 UI（卡片/面板/文字）—— z-index 高于 --z-light */
+  --z-brick:   0;   /* 砖墙背景 */
+  --z-veil:    1;   /* 砖墙压暗/暗角 */
+  --z-light:   2;   /* 光照层画布（受光层之上） */
+  --z-ui:      3;   /* UI 起始层（光照之上，不受光） */
 }
 
 *,*::before,*::after{ box-sizing:border-box; }
@@ -55,43 +63,64 @@ h1,h2,h3,h4{ margin:0; font-weight:700; letter-spacing:.02em; }
 p{ margin:0; }
 ul{ margin:0; padding:0; list-style:none; }
 
-/* ---------- 背景层（纯 CSS，零图片） ---------- */
-.bg-grid{
+/* ---------- 背景层：地牢砖墙 ----------
+   分层约定（供后续 2D 光照接入）：
+   · .bg-brick   —— 受光照层，位于 --wg-light-z 之下
+   · .bg-veil    —— 砖墙压暗/暗角，也受光照（叠在砖墙之上）
+   · UI（卡片/面板/文字）—— 位于光照层之上，不受光照影响
+   因此 z-index 必须严格：砖墙(0) < veil(1) < 光照层(2) < UI(3+)。 */
+.bg-brick{
   position:fixed; inset:0; z-index:0; pointer-events:none;
-  background-image:
-    linear-gradient(rgba(255,255,255,.028) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.028) 1px, transparent 1px);
-  background-size:56px 56px;
-  mask-image:radial-gradient(ellipse 80% 60% at 50% 30%, #000 40%, transparent 100%);
+  background-image:url("../img/bg_brick.png");
+  background-repeat:repeat;
+  /* 源素材 96px，放大 2 倍显示，保持像素锐利 */
+  background-size:192px 192px;
+  image-rendering:pixelated;
+  image-rendering:crisp-edges;
 }
-.bg-glow{
-  position:fixed; inset:0; z-index:0; pointer-events:none;
+.bg-veil{
+  position:fixed; inset:0; z-index:1; pointer-events:none;
+  /* 压暗力度需克制：过重会让砖墙纹理完全消失（实测亮度中位数仅 18、
+     起伏 15 级，几乎看不出砖块）。这里只做暗角与上下渐隐，
+     保证砖墙纹理清晰可辨，同时不抢 UI 的对比度。 */
   background:
-    radial-gradient(600px 400px at 12% 8%,  rgba(242,193,78,.10), transparent 70%),
-    radial-gradient(700px 500px at 88% 22%, rgba(63,127,224,.10), transparent 70%),
-    radial-gradient(500px 500px at 50% 100%,rgba(178,111,245,.08), transparent 70%);
+    radial-gradient(ellipse 95% 75% at 50% 40%, rgba(8,11,19,.10), rgba(8,11,19,.52) 80%, rgba(8,11,19,.70) 100%),
+    linear-gradient(180deg, rgba(8,11,19,.42) 0%, rgba(8,11,19,.05) 20%, rgba(8,11,19,.05) 72%, rgba(8,11,19,.50) 100%);
 }
 
-/* ---------- 顶部 EXP 条 ---------- */
+/* ---------- 2D 光照层（占位，当前仅保留分层） ----------
+   覆盖在受光层（砖墙 z=0 / 压暗 z=1）之上，位于 UI（z>=3）之下，
+   因此只有砖墙、英雄、怪物会被照亮，UI 元素保持原样不受影响。
+   英雄/怪物所在的 wallgame 画布目前 z-index:40，会在后续接入光照时
+   调整到本层之下，使其一并受光。 */
+.light-layer{
+  position:fixed; inset:0; z-index:var(--z-light);
+  pointer-events:none;
+}
 .expbar{
-  position:fixed; top:0; left:0; right:0; height:3px; z-index:60;
-  background:rgba(255,255,255,.05);
+  position:fixed; top:0; left:0; right:0; height:4px; z-index:60;
+  background:
+    repeating-linear-gradient(90deg, #0b0f18 0 3px, #131a28 3px 4px),
+    #0b0f18;
+  box-shadow:inset 0 -1px 0 #000;
 }
 .expbar i{
   display:block; height:100%; width:0%;
-  background:linear-gradient(90deg, var(--gold-deep), var(--gold));
-  box-shadow:0 0 12px rgba(242,193,78,.7);
+  background:
+    repeating-linear-gradient(90deg, rgba(0,0,0,.30) 0 1px, transparent 1px 4px),
+    linear-gradient(180deg, #ffe9a8 0 1px, var(--gold) 1px, var(--gold-deep) 100%);
+  image-rendering:pixelated;
   transition:width .18s linear;
 }
 .expbar span{
   position:absolute; top:6px; right:10px;
   font:600 11px/1 var(--font-num); color:var(--gold);
-  text-shadow:0 1px 3px #000; letter-spacing:.1em;
+  text-shadow:1px 1px 0 #000; letter-spacing:.1em;
 }
 
 /* ---------- 首屏 Hero ---------- */
 .hero{
-  position:relative; z-index:1;
+  position:relative; z-index:var(--z-ui);
   min-height:74vh;
   display:flex; flex-direction:column; align-items:center; justify-content:center;
   text-align:center; padding:80px 20px 40px;
@@ -104,7 +133,8 @@ ul{ margin:0; padding:0; list-style:none; }
   font-size:clamp(38px, 7vw, 76px); line-height:1.08;
   background:linear-gradient(180deg,#fff 10%, var(--gold) 95%);
   -webkit-background-clip:text; background-clip:text; color:transparent;
-  text-shadow:0 0 42px rgba(242,193,78,.18);
+  /* 像素风：用硬边描边替代发光，避免柔和的光晕破坏像素锐利感 */
+  text-shadow:2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
 }
 .hero-en{
   margin-top:6px; font:400 13px/1 var(--font-num);
@@ -115,8 +145,9 @@ ul{ margin:0; padding:0; list-style:none; }
 }
 .hero-tags{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:24px; }
 .tag{
-  padding:5px 12px; border:1px solid var(--line); border-radius:999px;
+  padding:5px 12px; border:1px solid var(--line); border-radius:0;
   font-size:12px; color:var(--ink-dim); background:rgba(255,255,255,.03);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.6);
 }
 .tag b{ color:var(--gold); font-weight:600; }
 
@@ -128,7 +159,7 @@ ul{ margin:0; padding:0; list-style:none; }
 
 /* ---------- 主布局 ---------- */
 .layout{
-  position:relative; z-index:1;
+  position:relative; z-index:var(--z-ui);
   max-width:1420px; margin:0 auto;
   /* 底部内边距必须尽量小：滚到底部时布局底边被 footer 锁死，而
      sticky 元素不能越过容器内容盒底边（= 布局底边 − padding-bottom）。
@@ -157,22 +188,35 @@ ul{ margin:0; padding:0; list-style:none; }
   scrollbar-width:thin;
   scrollbar-color:var(--gold-deep) transparent;
 }
-.col-side .panel-wrap::-webkit-scrollbar{ width:6px; }
-.col-side .panel-wrap::-webkit-scrollbar-track{ background:transparent; }
+.col-side .panel-wrap::-webkit-scrollbar{ width:8px; }
+.col-side .panel-wrap::-webkit-scrollbar-track{
+  background:
+    repeating-linear-gradient(180deg, rgba(0,0,0,.6) 0 2px, rgba(0,0,0,.4) 2px 4px),
+    #0a0e16;
+}
 .col-side .panel-wrap::-webkit-scrollbar-thumb{
-  background:var(--gold-deep); border-radius:3px;
+  background:
+    repeating-linear-gradient(180deg, rgba(0,0,0,.3) 0 1px, transparent 1px 4px),
+    linear-gradient(90deg, var(--gold-deep) 0 2px, var(--gold) 2px 6px, var(--gold-deep) 6px 8px);
+  border-radius:0;
+  border:1px solid #000;
 }
 
 /* ---------- 时间轴 ---------- */
 .timeline{ position:relative; padding-left:46px; }
 .tl-axis{
-  position:absolute; left:15px; top:6px; bottom:6px; width:2px;
-  background:linear-gradient(180deg, transparent, var(--line) 6%, var(--line) 94%, transparent);
+  position:absolute; left:15px; top:6px; bottom:6px; width:4px;
+  /* 像素锁链：暗底 + 每 4px 一道的链节刻痕 */
+  background:
+    repeating-linear-gradient(180deg, rgba(0,0,0,.7) 0 2px, transparent 2px 4px),
+    linear-gradient(90deg, #0a0e16 0 1px, #1a2133 1px 3px, #0a0e16 3px 4px);
 }
 .tl-axis i{
   position:absolute; left:0; top:0; width:100%; height:0%;
-  background:linear-gradient(180deg, var(--gold), var(--q-legend));
-  box-shadow:0 0 14px rgba(242,193,78,.55);
+  background:
+    repeating-linear-gradient(180deg, rgba(0,0,0,.35) 0 1px, transparent 1px 4px),
+    linear-gradient(180deg, var(--gold), var(--q-legend));
+  image-rendering:pixelated;
   transition:height .2s linear;
 }
 
@@ -180,31 +224,35 @@ ul{ margin:0; padding:0; list-style:none; }
 
 .node{ position:relative; }
 .node-dot{
-  position:absolute; left:-39px; top:14px; width:16px; height:16px;
-  border-radius:50%; border:2px solid var(--line);
+  position:absolute; left:-40px; top:14px; width:14px; height:14px;
+  border-radius:0; border:2px solid var(--line);
   background:var(--bg-2); transition:all var(--dur) var(--ease);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.8);
 }
 .node-dot::after{
-  content:""; position:absolute; inset:3px; border-radius:50%;
+  content:""; position:absolute; inset:2px; border-radius:0;
   background:var(--ink-faint); transition:all var(--dur) var(--ease);
 }
 .node.is-on .node-dot{
-  border-color:var(--gold); box-shadow:0 0 0 4px rgba(242,193,78,.14), 0 0 18px rgba(242,193,78,.5);
+  border-color:var(--gold); box-shadow:0 0 0 3px rgba(242,193,78,.14), 0 0 18px rgba(242,193,78,.5);
 }
 .node.is-on .node-dot::after{ background:var(--gold); }
 
 .node-card{
-  border:1px solid var(--line-soft);
-  background:linear-gradient(150deg, rgba(255,255,255,.045), rgba(255,255,255,.012));
-  border-radius:var(--radius);
+  /* 像素石板框：九宫格描边（slice 4），中心透明露出底色 */
+  border:4px solid transparent;
+  border-image:url("../img/frame_card.png") 4 / 4px stretch;
+  background:linear-gradient(150deg, rgba(38,48,72,.92), rgba(18,24,38,.94));
+  background-clip:padding-box;
+  border-radius:0;
   padding:18px 20px;
   opacity:.42; transform:translateY(14px);
   transition:opacity .5s var(--ease), transform .5s var(--ease), border-color .4s, box-shadow .4s;
 }
 .node.is-on .node-card{
   opacity:1; transform:none;
-  border-color:rgba(242,193,78,.42);
-  box-shadow:0 10px 40px -18px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.06);
+  border-image:url("../img/frame_card.png") 4 / 4px stretch;
+  box-shadow:0 10px 40px -18px rgba(0,0,0,.9);
 }
 .node-card::before{
   content:""; position:absolute; left:-6px; top:0; bottom:0; width:3px;
@@ -216,8 +264,9 @@ ul{ margin:0; padding:0; list-style:none; }
 .node-year{
   font:700 13px/1 var(--font-num); color:var(--gold);
   letter-spacing:.08em; padding:4px 9px;
-  border:1px solid rgba(242,193,78,.32); border-radius:3px;
+  border:1px solid rgba(242,193,78,.32); border-radius:0;
   background:rgba(242,193,78,.07);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.6);
 }
 .node-role{ font-size:19px; font-weight:700; }
 .node-org{ font-size:13px; color:var(--ink-dim); }
@@ -227,8 +276,10 @@ ul{ margin:0; padding:0; list-style:none; }
 
 .node-tags{ margin-top:14px; display:flex; flex-wrap:wrap; gap:6px; }
 .chip{
-  font:600 11px/1 var(--font); padding:5px 9px; border-radius:3px;
-  border:1px solid var(--line); color:var(--ink-dim); background:rgba(255,255,255,.03);
+  font:600 11px/1 var(--font); padding:5px 9px; border-radius:0;
+  border:1px solid var(--line); color:var(--ink-dim);
+  background:rgba(255,255,255,.03);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.55);
   transition:color .3s, border-color .3s, background .3s;
 }
 .chip.q1{ color:var(--q-uncommon); border-color:rgba(74,222,128,.35); background:rgba(74,222,128,.07); }
@@ -238,7 +289,7 @@ ul{ margin:0; padding:0; list-style:none; }
 
 /* ---------- 页脚 ---------- */
 .site-foot{
-  position:relative; z-index:1;
+  position:relative; z-index:var(--z-ui);
   text-align:center; padding:40px 20px 60px;
   border-top:1px solid var(--line-soft);
   color:var(--ink-faint); font-size:12px; letter-spacing:.06em;
@@ -250,8 +301,10 @@ ul{ margin:0; padding:0; list-style:none; }
 /* ---------- 浮层提示 ---------- */
 .tip{
   position:fixed; z-index:80; max-width:270px; padding:10px 12px;
-  border:1px solid var(--gold-deep); border-radius:3px;
+  border:4px solid transparent;
+  border-image:url("../img/frame_tip.png") 4 / 4px stretch;
   background:rgba(10,13,20,.97);
+  background-clip:padding-box;
   box-shadow:0 12px 34px -10px #000;
   font-size:12px; line-height:1.6; color:var(--ink);
   opacity:0; transform:translateY(6px); pointer-events:none;

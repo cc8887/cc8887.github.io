@@ -14,8 +14,11 @@
 </head>
 <body>
 
-<div class="bg-grid" aria-hidden="true"></div>
-<div class="bg-glow" aria-hidden="true"></div>
+<div class="bg-brick" aria-hidden="true"></div>
+<div class="bg-veil" aria-hidden="true"></div>
+<!-- 2D 光照层占位：仅覆盖【受光层】（砖墙/英雄/怪物），
+     位于其之上、UI 之下，故 UI 元素不受光照影响 -->
+<div class="light-layer" id="lightLayer" aria-hidden="true"></div>
 
 <div class="expbar" aria-hidden="true"><i id="expFill"></i><span id="expText">EXP 0%</span></div>
 

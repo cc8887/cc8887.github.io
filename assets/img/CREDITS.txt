@@ -26,3 +26,22 @@
 
 切片方式：按 48px 网格横向裁切，保持透明通道与像素锐利度
 （渲染时使用 image-rendering: pixelated）。
+
+
+程序化生成的站点素材（新增）
+----------------------------
+以下 PNG 由本项目脚本 tools/gen_pixel_assets.py 程序化生成，
+为原创作品，同样以 CC0 1.0 释出，可自由使用与修改。
+
+- bg_brick.png     96×96  地牢砖墙，无缝平铺（受 2D 光照层影响）
+                   生成约束：tile % bw == 0 且 (tile // bh) 为奇数，
+                   否则平铺后横缝会连成贯穿直线。
+- bg_plate.png     32×32  UI 面板底纹，无缝平铺（不受光照）
+- frame_panel.png  24×24  九宫格金框，slice 8；可拉伸边为纯色环带，
+                   角部铆钉不参与拉伸，故任意尺寸下不变形。
+- frame_card.png   12×12  九宫格石板框，slice 4
+- frame_tip.png    12×12  九宫格金框（提示框），slice 4
+- badge_star.png   32×32  像素星级徽章，替代 ★ 字形
+
+重新生成：python tools/gen_pixel_assets.py
+自检（无缝 / 九宫格拉伸）：python tools/_verify_assets.py

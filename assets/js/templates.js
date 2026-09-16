@@ -78,7 +78,10 @@
     var q = Q_TEXT[st.quality] || "普通";
     return '' +
       '<div class="p-basic">' +
-        '<div class="p-avatar">' + esc(w.PROFILE.avatarText) + "</div>" +
+        '<div class="p-avatar">' +
+          '<img class="badge" src="assets/img/badge_star.png" alt="" ' +
+               'width="40" height="40" aria-hidden="true">' +
+        "</div>" +
         '<div class="p-id">' +
           '<div class="p-name">' + esc(w.PROFILE.name) +
             '<span class="q q' + st.quality + '">' + esc(ch.job) + "</span>" +

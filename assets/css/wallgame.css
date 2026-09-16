@@ -11,7 +11,7 @@
 .wg-canvas{
   position:absolute;
   /* left/top 由 JS 按 CHAR_SCALE 动态设置（30*scale / 38*scale），此处不硬编码 */
-  z-index:40;
+  z-index:var(--wg-canvas-z, 40);
   display:block;
   pointer-events:none;
   image-rendering:pixelated;
@@ -36,8 +36,9 @@
   color:rgba(242,193,78,.55);
   border:1px solid rgba(242,193,78,.22);
   padding:3px 7px;
-  border-radius:2px;
+  border-radius:0;
   background:rgba(0,0,0,.35);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.8);
 }
 .wg-kills b{
   color:var(--gold);
