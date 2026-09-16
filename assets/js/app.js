@@ -27,6 +27,13 @@
   var curState = null;
   var rafPending = false;
 
+  /* 尾段判定线收缩：滚动进度超过 TAIL_START 后，判定线由视口 45%
+     渐变为 TAIL_LINE，使页面尾部节点也能逐个触发（详见 measure）。
+     若把 TAIL_START 设为 1 即完全关闭该修正。 */
+  var TAIL_START = 0.55;   // 尾段起点（滚动进度）
+  var TAIL_LINE = 0.06;    // 滚到底时判定线的位置（视口高比例）
+  function easeInOut(p) { return p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2; }
+
   /* 快照：依次算出每一章的累积属性，便于任意两章之间做 diff */
   var SNAPS = [];
   (function buildSnapshots() {
@@ -176,6 +183,18 @@
 
     /* 以视口 45% 位置作为判定线 */
     var line = vh * 0.45;
+
+    /* 页面滚到底后，尾部若干节点的触发点会落在可滚动范围之外
+       （它们本该在更长的页面里才滚到判定线），于是永远触发不了，
+       只能靠下面的"滚到底"兜底一次性点亮 —— 表现为最后两个节点
+       同时出现。这里把判定线在页面尾段随滚动进度上移，把这部分
+       行程压缩进实际可滚动范围内，让尾部节点仍逐个触发。 */
+    var maxScroll = Math.max(1, d.documentElement.scrollHeight - vh);
+    var y = w.scrollY || d.documentElement.scrollTop || 0;
+    var tail = Math.max(0, Math.min(1, (y - maxScroll * TAIL_START) /
+      Math.max(1, maxScroll * (1 - TAIL_START))));
+    line = line - (line - vh * TAIL_LINE) * easeInOut(tail);
+
     var activeIdx = 0;
     for (var i = 0; i < nodes.length; i++) {
       if (nodes[i].getBoundingClientRect().top <= line) activeIdx = i;
