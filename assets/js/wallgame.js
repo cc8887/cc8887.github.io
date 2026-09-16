@@ -386,6 +386,22 @@ function mount() {
         g.restore();
       }
     }
+
+    /* 2D 光照：把英雄所在位置作为光源，并对精灵着色。
+       画布必须盖在面板之上（否则怪物会被不透明面板挡住），
+       因此无法放在全屏光照层之下，只能在画布内用同一光源叠加一次。 */
+    applyLighting();
+  }
+
+  /* 把英雄脚底（略微上移到身体中部）换算为视口坐标，交给光照模块 */
+  function applyLighting() {
+    var L = w.PixelLight;
+    if (!L || !hero) return;
+    var r = cvs.getBoundingClientRect();
+    /* 英雄以脚底为锚点，光源取身体中部：上移约半个身位 */
+    var bodyMid = -(HEAD_UP * heroScale()) * 0.5;
+    L.setSource(r.left + hero.x, r.top + hero.y + bodyMid);
+    L.tintSprites(g, r, W, H);
   }
 
   function boot() {

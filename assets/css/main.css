@@ -80,12 +80,11 @@ ul{ margin:0; padding:0; list-style:none; }
 }
 .bg-veil{
   position:fixed; inset:0; z-index:1; pointer-events:none;
-  /* 压暗力度需克制：过重会让砖墙纹理完全消失（实测亮度中位数仅 18、
-     起伏 15 级，几乎看不出砖块）。这里只做暗角与上下渐隐，
-     保证砖墙纹理清晰可辨，同时不抢 UI 的对比度。 */
+  /* 光照开启后由光照层承担主要压暗，这里只保留轻微暗角做兜底，
+     避免两者叠加把远处砖墙压成纯黑。 */
   background:
-    radial-gradient(ellipse 95% 75% at 50% 40%, rgba(8,11,19,.10), rgba(8,11,19,.52) 80%, rgba(8,11,19,.70) 100%),
-    linear-gradient(180deg, rgba(8,11,19,.42) 0%, rgba(8,11,19,.05) 20%, rgba(8,11,19,.05) 72%, rgba(8,11,19,.50) 100%);
+    radial-gradient(ellipse 95% 75% at 50% 40%, rgba(8,11,19,.04), rgba(8,11,19,.22) 82%, rgba(8,11,19,.34) 100%),
+    linear-gradient(180deg, rgba(8,11,19,.20) 0%, rgba(8,11,19,.02) 22%, rgba(8,11,19,.02) 72%, rgba(8,11,19,.24) 100%);
 }
 
 /* ---------- 2D 光照层（占位，当前仅保留分层） ----------
