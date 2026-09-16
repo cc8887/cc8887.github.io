@@ -95,11 +95,17 @@ function mount() {
 
   var DPR = 1;
   var W = 0, H = 0, PAD = 0;
-  /* 角色基础缩放：5 倍 */
-  var CHAR_SCALE = 5;
-  /* 画布相对面板框向外的留白：需容纳放大后的角色，随 CHAR_SCALE 联动 */
+  /* 角色基础缩放：由 5 缩小为一半 -> 2.5 */
+  var CHAR_SCALE = 2.5;
+  /* 每完成一段工作经历的成长倍率（以脚底为中心放大） */
+  var GROW_STEP = 1.2;
+  var GROW_MAX = 3;            // 成长倍率上限，避免无限膨胀
+  var LVUP_MS = 900;           // 升级特效时长
+  var heroLevel = 0;           // 已完成的工作经历段数
+  /* 画布相对面板框向外的留白：随 CHAR_SCALE 联动。
+     上方需容纳"基础尺寸 × 最大成长倍率"的角色，否则满级会被切头。 */
   var OUT_X = Math.round(30 * CHAR_SCALE);
-  var OUT_Y = Math.round(38 * CHAR_SCALE);
+  var OUT_Y = Math.round(38 * CHAR_SCALE * GROW_MAX);
   var EDGE = 3;                 // 面板金色边框的视觉厚度
   var ATK_FRAME_DT = 0.1 / 3;   // 攻击动画加快 3 倍（0.1s -> 0.0333s）
   var ATK_CD = 0.35;            // 攻击冷却，配合更快的挥砍
@@ -136,8 +142,35 @@ function mount() {
     /* 站在顶边【外侧】的墙头上，脚底正好压住顶边外沿线 */
     return {
       x: W / 2, y: OUT_Y + PAD,
-      state: "idle", frame: 0, t: 0, face: 1, atkCd: 0
+      state: "idle", frame: 0, t: 0, face: 1, atkCd: 0,
+      /* grow：累计成长倍率（以脚底为中心）；lvT：升级特效剩余时间 */
+      grow: 1, lvT: 0, lvDur: 0
     };
+  }
+
+  /* 当前实际绘制缩放 = 基础缩放 × 成长倍率（升级时短暂弹一下） */
+  function heroScale() {
+    var s = CHAR_SCALE * hero.grow;
+    if (hero.lvT > 0 && hero.lvDur > 0) {
+      var k = 1 - hero.lvT / hero.lvDur;        // 0 -> 1
+      /* 起跳放大再回落：1 + 0.25*sin(pi*k) */
+      s *= 1 + 0.25 * Math.sin(Math.PI * k);
+    }
+    return s;
+  }
+
+  /* 播放升级特效：脚底为中心放大 GROW_STEP 倍 */
+  function levelUp() {
+    if (!hero) return;
+    heroLevel++;
+    hero.grow = Math.min(GROW_MAX, hero.grow * GROW_STEP);
+    hero.lvT = LVUP_MS / 1000;
+    hero.lvDur = LVUP_MS / 1000;
+    /* 便于外部读取当前等级/倍率 */
+    cvs.dataset.level = heroLevel;
+    cvs.dataset.grow = hero.grow.toFixed(3);
+    /* 升级光环：以脚底为中心 */
+    fx.push({ x: hero.x, y: hero.y, t: 0, life: 0.9, side: 0, lv: true });
   }
 
   function spawn() {
@@ -199,6 +232,7 @@ function mount() {
       hero.frame = (hero.frame + 1) % 8;
     }
     if (hero.atkCd > 0) hero.atkCd -= dt;
+    if (hero.lvT > 0) hero.lvT = Math.max(0, hero.lvT - dt);
 
     /* 怪物：贴到离英雄"一个身位"处即停下，不会绕到英雄另一侧
        实测素材实际身体宽度约 19px/帧（48px 帧内两侧留白），
@@ -271,23 +305,52 @@ function mount() {
       drawSprite(sheet, fr, p.x, p.y + bob, scale, m.side < 0);
     }
 
-    /* 英雄：素材默认朝左，face=-1(朝左) 不翻转，face=+1(朝右) 翻转 */
+    /* 英雄：素材默认朝左，face=-1(朝左) 不翻转，face=+1(朝右) 翻转
+       缩放随工作经历成长；drawSprite 以脚底为锚点，故放大即以脚底为中心 */
     var hSheet = hero.state === "attack" ? ART.hero.attack
       : hero.state === "idle" ? ART.hero.idle : ART.hero.move;
-    drawSprite(hSheet, hero.frame, hero.x, hero.y, scale, hero.face > 0);
+    drawSprite(hSheet, hero.frame, hero.x, hero.y, heroScale(), hero.face > 0);
 
-    /* 命中特效：金色扩散环 */
+    /* 特效 */
     for (var k = 0; k < fx.length; k++) {
       var f = fx[k];
       var pr = f.t / f.life;
-      g.save();
-      g.globalAlpha = 1 - pr;
-      g.strokeStyle = "#f2c14e";
-      g.lineWidth = 2;
-      g.beginPath();
-      g.arc(f.x, f.y, 6 + pr * 18, 0, Math.PI * 2);
-      g.stroke();
-      g.restore();
+      if (f.lv) {
+        /* 升级特效：以脚底为中心的金色光环 + 上升光柱 */
+        g.save();
+        g.globalAlpha = 1 - pr;
+        g.strokeStyle = "#ffd75e";
+        g.lineWidth = 3;
+        g.beginPath();
+        g.arc(f.x, f.y, 10 + pr * 46 * (2.5 / CHAR_SCALE), 0, Math.PI * 2);
+        g.stroke();
+        /* 上升光柱 */
+        var bh = 70 * (1 - pr) * (2.5 / CHAR_SCALE);
+        var grd = g.createLinearGradient(0, f.y - bh, 0, f.y);
+        grd.addColorStop(0, "rgba(255,215,94,0)");
+        grd.addColorStop(1, "rgba(255,215,94,.55)");
+        g.fillStyle = grd;
+        g.fillRect(f.x - 12, f.y - bh, 24, bh);
+        /* 上升粒子 */
+        for (var q = 0; q < 6; q++) {
+          var ang = (q / 6) * Math.PI * 2 + pr * 2;
+          var rr = (18 + pr * 34) * (2.5 / CHAR_SCALE);
+          g.fillStyle = "#fff3c4";
+          g.fillRect(f.x + Math.cos(ang) * rr - 2,
+            f.y - pr * 60 * (2.5 / CHAR_SCALE) + Math.sin(ang) * 6 - 2, 4, 4);
+        }
+        g.restore();
+      } else {
+        /* 命中特效：金色扩散环 */
+        g.save();
+        g.globalAlpha = 1 - pr;
+        g.strokeStyle = "#f2c14e";
+        g.lineWidth = 2;
+        g.beginPath();
+        g.arc(f.x, f.y, 6 + pr * 18, 0, Math.PI * 2);
+        g.stroke();
+        g.restore();
+      }
     }
   }
 
@@ -326,6 +389,36 @@ function mount() {
     }, { threshold: 0.05 });
     io.observe(HOST);
   }
+
+  /* ============================================================
+     滚动触发：每"完整展示"出一段工作经历 -> 播放升级特效
+     判定：章节节点的底边进入视口（即该段内容完整可见）时触发一次
+     ============================================================ */
+  var CHAPTERS = d.getElementById("chapters");
+  var fired = [];              // 每段是否已触发过
+
+  function checkChapters() {
+    if (!CHAPTERS || !hero) return;
+    var vh = w.innerHeight || d.documentElement.clientHeight;
+    var nodes = CHAPTERS.children;
+    for (var i = 0; i < nodes.length; i++) {
+      if (fired[i]) continue;
+      var r = nodes[i].getBoundingClientRect();
+      /* 完整展示：整段底边已进入视口，且顶边已滚过视口上沿 */
+      if (r.bottom <= vh && r.top <= vh * 0.9) {
+        fired[i] = true;
+        levelUp();
+      }
+    }
+  }
+
+  var scrollRaf = false;
+  function onScroll() {
+    if (scrollRaf) return;
+    scrollRaf = true;
+    requestAnimationFrame(function () { scrollRaf = false; checkChapters(); });
+  }
+  w.addEventListener("scroll", onScroll, { passive: true });
 
   w.addEventListener("resize", function () { if (hero) resize(); });
 
