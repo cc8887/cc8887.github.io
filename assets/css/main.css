@@ -256,11 +256,14 @@ ul{ margin:0; padding:0; list-style:none; }
      否则会被布局内容盖住，"楼层分隔"看不见 */
   z-index:4;
   pointer-events:none;
-  /* 楼板本体：横向平铺，96x72 源图放大 2 倍保持像素锐利 */
+  /* 楼板本体：横向平铺，必须与容器【等高】显示（96px 72px）。
+     此前设为 192x144（源图放大 2 倍）而容器只有 72px 高，
+     导致只显示源图上半张：铆钉被挤到可见区底部、下沿厚度带与
+     投影整段被裁掉 —— 即"素材位置太低"。现改为 1:1 完整显示。 */
   background-image:url("../img/floor_slab.png");
   background-repeat:repeat-x;
   background-position:center top;
-  background-size:192px 144px;   /* = 源图 96x72 的 2 倍 */
+  background-size:96px 72px;   /* = 源图原生尺寸，与容器等高 */
   image-rendering:pixelated;
   image-rendering:crisp-edges;
 }
@@ -277,28 +280,16 @@ ul{ margin:0; padding:0; list-style:none; }
     rgba(200,86,26,0) 100%);
   pointer-events:none;
 }
-/* 下沿厚度带：接在楼板下方，形成"板有厚度"的立体感 */
+/* 下沿厚度带：接在楼板下方，形成"板有厚度"的立体感。
+   96x24 原生尺寸 1:1 显示，与上方楼板像素密度一致。 */
 .floor-slab::after{
   content:"";
   position:absolute; left:0; right:0; top:100%;
-  height:24px;
+  height:var(--slab-edge);
   background-image:url("../img/floor_edge.png");
   background-repeat:repeat-x;
   background-position:center top;
-  background-size:192px 48px;
-  image-rendering:pixelated;
-  image-rendering:crisp-edges;
-  opacity:.92;
-}
-/* 下沿厚度带：接在楼板下方，形成"板有厚度"的立体感 */
-.floor-slab::after{
-  content:"";
-  position:absolute; left:0; right:0; top:100%;
-  height:24px;
-  background-image:url("../img/floor_edge.png");
-  background-repeat:repeat-x;
-  background-position:center top;
-  background-size:192px 48px;
+  background-size:96px 24px;   /* = 源图原生尺寸 */
   image-rendering:pixelated;
   image-rendering:crisp-edges;
   opacity:.92;
