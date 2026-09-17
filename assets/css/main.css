@@ -194,7 +194,7 @@ ul{ margin:0; padding:0; list-style:none; }
 /* 门限期提示：绝对定位，不占内容高度（否则会把第一页挤出视口） */
 .page-hint{
   position:absolute; left:0; right:0; bottom:22px;
-  text-align:center; font-size:12px; letter-spacing:.24em;
+  text-align:center; font-size:24px; letter-spacing:.24em;
   color:var(--ink-faint); pointer-events:none;
   opacity:0; transition:opacity .3s var(--ease);
   text-shadow:1px 1px 0 #000;
@@ -251,7 +251,9 @@ ul{ margin:0; padding:0; list-style:none; }
 .projects{
   position:relative; z-index:var(--z-ui);
   max-width:1420px; margin:0 auto;
-  padding:8px 20px 20px;
+  /* 底部留白须大于门限提示的高度（提示绝对定位、不占流）：
+     提示放大到 24px 后高约 41px，留 56px 保证任何视口都不压卡片 */
+  padding:8px 20px 56px;
 }
 .proj-title{
   font-size:15px; font-weight:700; color:var(--gold);
@@ -434,6 +436,16 @@ ul{ margin:0; padding:0; list-style:none; }
 .rise{ animation:rise .5s var(--ease-out) both; }
 @keyframes rise{ from{ opacity:0; transform:translateY(10px) } to{ opacity:1; transform:none } }
 
+/* 矮屏临界：宽度够（>700，走双列）但高度紧（≤760），
+   第一页容易因为项目区留白而超出一屏、退化成普通流。
+   这里收窄留白与卡片内距，把高度压回一屏。 */
+@media (min-width: 701px) and (max-height: 760px){
+  .projects{ padding:6px 20px 48px; }
+  .proj-card{ padding:6px 9px 6px; }
+  .proj-desc{ -webkit-line-clamp:2; }
+  .page-hint{ bottom:14px; font-size:24px; }
+}
+
 /* 分页：第一页必须完整落在一屏内才能钉住，否则退化为普通流。
    窄屏下项目卡片会堆成一列导致高度暴涨，这里进一步压缩。 */
 @media (max-width: 700px){
@@ -444,7 +456,7 @@ ul{ margin:0; padding:0; list-style:none; }
   .hero-desc{ font-size:12.5px; margin-top:7px; line-height:1.55; }
   .hero-tags{ margin-top:9px; gap:5px; }
   .hero-tags .tag{ padding:3px 8px; font-size:10.5px; }
-  .projects{ padding:4px 12px 14px; }
+  .projects{ padding:4px 12px 52px; }
   .proj-title{ font-size:13px; letter-spacing:.16em; }
   .proj-sub{ display:none; }
   .proj-grid{ grid-template-columns:1fr 1fr; gap:6px; margin-top:8px; }
@@ -452,14 +464,14 @@ ul{ margin:0; padding:0; list-style:none; }
   .proj-name{ font-size:11.5px; }
   .proj-desc{ -webkit-line-clamp:2; font-size:10.5px; margin-top:4px; line-height:1.45; }
   .proj-tags, .proj-star{ display:none; }
-  .page-hint{ bottom:14px; font-size:11px; }
+  .page-hint{ bottom:18px; font-size:22px; }
 }
 
 @media (max-width: 520px){
   .hero-desc{ font-size:12px; }
   .proj-desc{ -webkit-line-clamp:1; }
   .proj-card{ padding:5px 6px 4px; }
-  .projects{ padding:4px 10px 12px; }
+  .projects{ padding:4px 10px 50px; }
 }
   *,*::before,*::after{ animation-duration:.01ms !important; transition-duration:.01ms !important; }
   html{ scroll-behavior:auto; }
