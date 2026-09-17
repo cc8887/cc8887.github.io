@@ -320,14 +320,17 @@ ul{ margin:0; padding:0; list-style:none; }
 /* 右栏与左栏并列，仅在栅格内 sticky，不脱离文档流。
    --wg-sticky-top 由 wallgame.js 按角色最大尺寸计算：吸附后其上方
    留出一段不可见空间，作为画在面板框【外侧】的角色的显示区域，
-   避免英雄放大后被视口上沿切掉头部。 */
+   避免英雄放大后被视口上沿切掉头部。
+   --wg-slab-gap 是楼板【当前实际遮挡量】（未吸顶时为 0）：
+   不能无条件加楼板总高，否则上滚时楼板正从下方升起，
+   侧栏却已提前下移，反而与上升中的楼板重叠。 */
 .col-side{
   position:sticky;
-  /* 在 wallgame 计算的吸顶值之上再让出楼板高度：
-     楼板 sticky 吸顶后占据视口顶部（本体 --slab-h + 厚度带 --slab-edge），
-     不偏移的话属性栏与画在面板框外侧的英雄会被楼板压住。
-     英雄画布顶边实测需 >= 楼板底边，故再加 40px 安全余量。 */
-  top:calc(var(--wg-sticky-top, 8px) + var(--slab-total) + 40px);
+  /* 楼板吸顶时才让位（--wg-slab-gap = 楼板实际遮挡量）：
+     吸顶后侧栏让到楼板之下，避免属性栏与英雄压在楼板上；
+     未吸顶时 gap=0，侧栏回到正常吸顶位置，不提前下移。
+     再加 8px 呼吸缝，避免与楼板厚度带紧贴。 */
+  top:calc(var(--wg-sticky-top, 8px) + var(--wg-slab-gap, 0px) + 8px);
   align-self:start;
   z-index:30;
 }

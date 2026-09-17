@@ -135,6 +135,26 @@ function mount() {
       var avail = box.bottom - host.offsetHeight;
       if (avail < top) top = Math.max(0, Math.floor(avail));
     }
+
+    /* 楼板让位：楼板 sticky 吸顶后占据视口顶部，侧栏必须与它错开，
+       否则属性栏与画在面板框外侧的英雄会压在楼板上。
+       关键 1：不能无条件加"楼板总高"——上滚时楼板尚未吸顶、正从下方
+       升起，此时侧栏若仍按楼板总高下移，反而会和上升中的楼板重叠。
+       故按楼板【当前实际遮挡量】动态计算（未吸顶时为 0）。
+       关键 2：遮挡量必须算上 ::after 厚度带。getBoundingClientRect
+       只返回本体（72px），而下沿厚度带（--slab-edge，24px）由伪元素
+       绘制在本体之外，同样会压住侧栏 —— 漏算会残留 72px 重叠。 */
+    var slabEl = d.querySelector(".floor-slab");
+    var gap = 0;
+    if (slabEl) {
+      var sr = slabEl.getBoundingClientRect();
+      if (sr.top <= 0 && sr.bottom > 0) {
+        var cs = getComputedStyle(slabEl);
+        var edge = parseFloat(cs.getPropertyValue("--slab-edge")) || 0;
+        gap = Math.ceil(sr.bottom + edge);
+      }
+    }
+    d.documentElement.style.setProperty("--wg-slab-gap", gap + "px");
     d.documentElement.style.setProperty("--wg-sticky-top", top + "px");
   }
 
