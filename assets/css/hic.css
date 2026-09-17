@@ -20,11 +20,11 @@
 /* 承载原 hero 内容：复制 .hero 的排版参数，保证迁移前后视觉一致 */
 .hero-fx-src{
   width:100%;
-  min-height:52vh;
+  min-height:42vh;
   display:flex;
   flex-direction:column;
   align-items:center;
   justify-content:center;
   text-align:center;
-  padding:52px 20px 24px;
+  padding:34px 20px 16px;
 }

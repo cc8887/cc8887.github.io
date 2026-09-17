@@ -119,13 +119,13 @@ ul{ margin:0; padding:0; list-style:none; }
 /* ---------- 首屏 Hero ---------- */
 .hero{
   position:relative; z-index:var(--z-ui);
-  min-height:52vh;
+  min-height:42vh;
   display:flex; flex-direction:column; align-items:center; justify-content:center;
-  text-align:center; padding:52px 20px 24px;
+  text-align:center; padding:34px 20px 16px;
 }
 .hero-sub{
   font:600 12px/1 var(--font); letter-spacing:.42em; text-transform:uppercase;
-  color:var(--gold); margin-bottom:18px;
+  color:var(--gold); margin-bottom:12px;
 }
 .hero-title{
   font-size:clamp(38px, 7vw, 76px); line-height:1.08;
@@ -139,9 +139,9 @@ ul{ margin:0; padding:0; list-style:none; }
   letter-spacing:.34em; color:var(--ink-dim);
 }
 .hero-desc{
-  margin-top:22px; max-width:560px; color:var(--ink); font-size:15px;
+  margin-top:14px; max-width:560px; color:var(--ink); font-size:15px;
 }
-.hero-tags{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:24px; }
+.hero-tags{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:16px; }
 .tag{
   padding:5px 12px; border:1px solid var(--line); border-radius:0;
   font-size:12px; color:var(--ink); background:rgba(255,255,255,.03);
@@ -207,7 +207,7 @@ ul{ margin:0; padding:0; list-style:none; }
 .projects{
   position:relative; z-index:var(--z-ui);
   max-width:1420px; margin:0 auto;
-  padding:0 20px 40px;
+  padding:0 20px 32px;
 }
 .proj-title{
   font-size:15px; font-weight:700; color:var(--gold);
@@ -215,11 +215,11 @@ ul{ margin:0; padding:0; list-style:none; }
   text-shadow:1px 1px 0 #000;
 }
 .proj-sub{
-  margin-top:6px; text-align:center;
+  margin-top:5px; text-align:center;
   color:var(--ink-faint); font-size:13px; letter-spacing:.04em;
 }
 .proj-grid{
-  margin-top:18px;
+  margin-top:14px;
   display:grid;
   grid-template-columns:repeat(auto-fill, minmax(236px, 1fr));
   gap:14px;
