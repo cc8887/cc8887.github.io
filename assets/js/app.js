@@ -29,6 +29,8 @@
 
   /* 触发判定线（视口比例）：节点顶边越过此线即点亮该章 */
   var LINE_RATIO = 0.45;
+  /* 尾部占位额外余量（px），避免末章擦边差一点触发不到 */
+  var TAIL_PAD = 40;
 
   /* 快照：依次算出每一章的累积属性，便于任意两章之间做 diff */
   var SNAPS = [];
@@ -132,7 +134,8 @@
      ============================================================ */
   function renderAll() {
     el.hero.innerHTML = T.hero(w.PROFILE);
-    el.chapters.innerHTML = CH.map(T.chapterNode).join("");
+    el.chapters.innerHTML = CH.map(T.chapterNode).join("") +
+      '<div class="tl-tail" id="tlTail" aria-hidden="true"></div>';
     el.foot.innerHTML = T.footSite(w.PROFILE);
   }
 
@@ -155,11 +158,49 @@
     });
   }
 
+  /* ============================================================
+     尾部占位高度
+     页面可滚动距离不足时，最后一章"顶边到达判定线"所需的 scrollY
+     会超出可滚动范围，导致它永远触发不了，只能靠"滚到底"兜底与
+     前一章同时点亮。这里在列表尾部撑出一段空白，使最后一章也能
+     停到判定线（屏幕中部）。窄屏（上下堆叠）页面本身够长，
+     计算结果为 0 时不撑开。
+     ============================================================ */
+  /* 章节节点（排除尾部占位 .tl-tail） */
+  function chNodes() {
+    var list = [];
+    if (!el.chapters) return list;
+    for (var i = 0; i < el.chapters.children.length; i++) {
+      var n = el.chapters.children[i];
+      if (n.classList && n.classList.contains("tl-tail")) continue;
+      list.push(n);
+    }
+    return list;
+  }
+
+  function fitTail() {
+    var tail = d.getElementById("tlTail");
+    var ns = chNodes();
+    if (!tail || ns.length < 1) return;
+    var last = ns[ns.length - 1];
+    if (!last || !last.getBoundingClientRect) return;
+
+    tail.style.height = "0px";
+    var vh = w.innerHeight || d.documentElement.clientHeight;
+    var docH = Math.max(d.documentElement.scrollHeight, d.body.scrollHeight);
+    /* 最后一章在其"理想位置"下，需要文档再多高才能滚到判定线 */
+    var need = last.getBoundingClientRect().top + (w.scrollY || 0) - vh * LINE_RATIO;
+    /* TAIL_PAD：额外余量，避免刚好擦边（滚动位置取整、缩放等）导致
+       末章停在判定线下方 1~2px 而差一点触发不到 */
+    var extra = Math.ceil(need - (docH - vh)) + TAIL_PAD;
+    tail.style.height = (extra > 0 ? Math.min(extra, vh * 1.5) : 0) + "px";
+  }
+
   function setActive(idx) {
     if (idx === curIdx) return;
     curIdx = idx;
 
-    var nodes = el.chapters.children;
+    var nodes = chNodes();
     for (var i = 0; i < nodes.length; i++) {
       nodes[i].classList.toggle("is-on", i <= idx);
     }
@@ -174,57 +215,26 @@
   function measure() {
     rafPending = false;
 
+    /* 触发判定：节点顶边越过判定线（视口 LINE_RATIO 处）即点亮该章。
+       尾部节点"够不到判定线"的问题由 fitTail() 撑出的占位空间解决，
+       这里保持干净的固定判定线。 */
     var vh = w.innerHeight || d.documentElement.clientHeight;
-    var nodes = el.chapters.children;
+    var nodes = chNodes();
+    var line = vh * LINE_RATIO;
 
-    /* 触发判定：节点顶边越过判定线即点亮该章。
-       问题根源 —— 页面可滚动距离有限，靠后的节点"顶边到达判定线"
-       所需的 scrollY 会超出可滚动范围，它们永远触发不了，只能靠
-       下面的"滚到底"兜底一次性全部点亮，表现为最后几章同时出现。
-       修法：先算出每个节点【理想触发点】（文档坐标 − 判定线），
-       再把超出可滚动范围的尾部节点，按原有间隔比例压缩进尾段
-       剩余行程，使其仍在各自不同的 scrollY 上逐个触发。 */
-    var maxScroll = Math.max(1, d.documentElement.scrollHeight - vh);
-    var y = w.scrollY || d.documentElement.scrollTop || 0;
-    var i;
-
-    /* 1) 理想触发点：nodeTop(文档坐标) - line */
-    var need = [];
-    for (i = 0; i < nodes.length; i++) {
-      need.push(nodes[i].getBoundingClientRect().top + y - vh * LINE_RATIO);
-    }
-
-    /* 2) 找第一个超出可滚动范围的节点 k，把 [k, n-1] 压缩进
-          (need[k-1], maxScroll] 这段剩余行程；压缩时保持相对间隔。 */
-    var k = -1;
-    for (i = 0; i < need.length; i++) { if (need[i] > maxScroll) { k = i; break; } }
-    if (k > 0) {
-      var room = maxScroll - need[k - 1];        // 尾段可用行程
-      var span = need[need.length - 1] - need[k - 1];  // 原本需要的行程
-      if (room > 0 && span > 0) {
-        for (i = k; i < need.length; i++) {
-          need[i] = need[k - 1] + room * ((need[i] - need[k - 1]) / span);
-        }
-      }
-    } else if (k === 0) {
-      /* 连第一个节点都够不到（极短页面）：全部均匀摊开 */
-      for (i = 0; i < need.length; i++) {
-        need[i] = maxScroll * ((i + 1) / need.length);
-      }
-    }
-
-    /* 3) 以重映射后的触发点判定当前激活章 */
     var activeIdx = 0;
-    for (i = 0; i < need.length; i++) { if (y >= need[i]) activeIdx = i; }
+    for (var i = 0; i < nodes.length; i++) {
+      /* +1px 容差：抵消布局/缩放的亚像素误差 */
+      if (nodes[i].getBoundingClientRect().top <= line + 1) activeIdx = i;
+    }
 
-    /* 滚到最底部时强制最后一章（兜底，正常路径下已能自然到达） */
+    /* 滚到最底部时强制最后一章（兜底） */
     if (w.innerHeight + w.scrollY >= d.body.offsetHeight - 4) {
       activeIdx = nodes.length - 1;
     }
     setActive(activeIdx);
 
-    /* 时间轴进度（仍按原始判定线，与视觉进度保持一致） */
-    var line = vh * LINE_RATIO;
+    /* 时间轴进度 */
     var first = nodes[0], last = nodes[nodes.length - 1];
     if (first && last) {
       var start = first.offsetTop + first.offsetHeight / 2;
@@ -331,9 +341,15 @@
   function init() {
     renderAll();
     bindTip();
+    fitTail();
     w.addEventListener("scroll", onScroll, { passive: true });
-    w.addEventListener("resize", onScroll);
+    w.addEventListener("resize", function () { fitTail(); onScroll(); });
     measure();
+    /* 字体 / 图片就位后布局会变，重算一次占位高度 */
+    w.addEventListener("load", function () { fitTail(); measure(); });
+    if (d.fonts && d.fonts.ready && d.fonts.ready.then) {
+      d.fonts.ready.then(function () { fitTail(); measure(); });
+    }
   }
 
   if (d.readyState === "loading") d.addEventListener("DOMContentLoaded", init);

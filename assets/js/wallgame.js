@@ -450,10 +450,13 @@ function mount() {
   function checkChapters() {
     if (!CHAPTERS || !hero) return;
     var vh = w.innerHeight || d.documentElement.clientHeight;
-    var nodes = CHAPTERS.children;
-    for (var i = 0; i < nodes.length; i++) {
+    var kids = CHAPTERS.children;
+    for (var i = 0; i < kids.length; i++) {
+      var nd = kids[i];
+      /* 跳过尾部占位（.tl-tail），它不是真实章节 */
+      if (nd.classList && nd.classList.contains("tl-tail")) continue;
       if (fired[i]) continue;
-      var r = nodes[i].getBoundingClientRect();
+      var r = nd.getBoundingClientRect();
       /* 完整展示：整段底边已进入视口，且顶边已滚过视口上沿 */
       if (r.bottom <= vh && r.top <= vh * 0.9) {
         fired[i] = true;
