@@ -136,24 +136,28 @@ function mount() {
       if (avail < top) top = Math.max(0, Math.floor(avail));
     }
 
-    /* 楼板让位：楼板 sticky 吸顶后占据视口顶部，侧栏必须与它错开，
-       否则属性栏与画在面板框外侧的英雄会压在楼板上。
-       关键 1：不能无条件加"楼板总高"——上滚时楼板尚未吸顶、正从下方
-       升起，此时侧栏若仍按楼板总高下移，反而会和上升中的楼板重叠。
-       故按楼板【当前实际遮挡量】动态计算（未吸顶时为 0）。
-       关键 2：遮挡量必须算上 ::after 厚度带。getBoundingClientRect
-       只返回本体（72px），而下沿厚度带（--slab-edge，24px）由伪元素
-       绘制在本体之外，同样会压住侧栏 —— 漏算会残留 72px 重叠。 */
+    /* 让位量 = 楼板【底边】（含 ::after 厚度带），且【不区分是否吸顶】。
+       推导：sticky 让位后，英雄头顶 = 面板top - 英雄高。
+         面板top = wg-sticky-top(已含英雄预留 need≈227) + gap + 8
+         英雄头顶 = 235 + gap - 215.6 = 19.4 + gap
+       而 gap = 楼板底边，故 英雄头顶 = 19.4 + 楼板底边 > 楼板底边 恒成立，
+       即英雄永远落在楼板下方，不会被楼板压、也不会压住楼板。
+       语义上也自然：楼板是"地板"，侧栏随地板一起下移。
+       注：不能只在吸顶时让位——上滚时楼板未吸顶、正从顶部往下退行，
+       会扫过英雄所在高度，此时同样必须让位（此前 gap=0 即踩此坑）。 */
     var slabEl = d.querySelector(".floor-slab");
     var gap = 0;
     if (slabEl) {
       var sr = slabEl.getBoundingClientRect();
-      if (sr.top <= 0 && sr.bottom > 0) {
-        var cs = getComputedStyle(slabEl);
-        var edge = parseFloat(cs.getPropertyValue("--slab-edge")) || 0;
-        gap = Math.ceil(sr.bottom + edge);
-      }
+      var cs = getComputedStyle(slabEl);
+      var edge = parseFloat(cs.getPropertyValue("--slab-edge")) || 0;
+      var bottom = Math.ceil(sr.bottom + edge);
+      if (bottom > 0) gap = bottom;
     }
+    /* 上限保护：避免楼板退到很低时把侧栏推出视口。
+       sticky 本身受容器底边约束，此处再留一道保险。 */
+    var capGap = Math.round((w.innerHeight || 800) * 0.8);
+    if (gap > capGap) gap = capGap;
     d.documentElement.style.setProperty("--wg-slab-gap", gap + "px");
     d.documentElement.style.setProperty("--wg-sticky-top", top + "px");
   }
