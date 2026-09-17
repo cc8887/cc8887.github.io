@@ -33,8 +33,7 @@
       '<h1 class="hero-title">' + esc(p.name) + "</h1>" +
       '<div class="hero-en">' + esc(p.enName) + "</div>" +
       '<p class="hero-desc">' + esc(p.desc) + "</p>" +
-      '<div class="hero-tags">' + tags + "</div>" +
-      '<div class="scroll-hint">向下滚动以展开履历 ▼</div>';
+      '<div class="hero-tags">' + tags + "</div>";
   }
 
   /* ============================================================
