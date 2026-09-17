@@ -29,6 +29,13 @@
 
   /* 尺寸 */
   --radius:        4px;
+  /* 楼板：第二页顶部的"楼层板"，sticky 吸顶后会占住视口顶部。
+     本体 --slab-h + 下沿厚度带 --slab-edge = --slab-total。
+     属性栏/英雄的 sticky 顶部必须让出 --slab-total，
+     否则会被楼板压住（用户反馈"挡英雄"）。 */
+  --slab-h:        72px;
+  --slab-edge:     24px;
+  --slab-total:    96px;
   --gap:           16px;
   --panel-w:       560px;
   --main-w:        400px;
@@ -243,17 +250,17 @@ ul{ margin:0; padding:0; list-style:none; }
 .floor-slab{
   position:sticky; top:0;
   display:block;
-  height:48px;
-  margin-bottom:24px;
+  height:var(--slab-h);
+  margin-bottom:var(--slab-edge);
   /* 必须高于 .layout（z=3）：楼板 sticky 吸顶后要压在内容之上，
      否则会被布局内容盖住，"楼层分隔"看不见 */
   z-index:4;
   pointer-events:none;
-  /* 楼板本体：横向平铺，96px 源图放大 2 倍保持像素锐利 */
+  /* 楼板本体：横向平铺，96x72 源图放大 2 倍保持像素锐利 */
   background-image:url("../img/floor_slab.png");
   background-repeat:repeat-x;
   background-position:center top;
-  background-size:192px 96px;
+  background-size:192px 144px;   /* = 源图 96x72 的 2 倍 */
   image-rendering:pixelated;
   image-rendering:crisp-edges;
 }
@@ -325,7 +332,11 @@ ul{ margin:0; padding:0; list-style:none; }
    避免英雄放大后被视口上沿切掉头部。 */
 .col-side{
   position:sticky;
-  top:var(--wg-sticky-top, 8px);
+  /* 在 wallgame 计算的吸顶值之上再让出楼板高度：
+     楼板 sticky 吸顶后占据视口顶部（本体 --slab-h + 厚度带 --slab-edge），
+     不偏移的话属性栏与画在面板框外侧的英雄会被楼板压住。
+     英雄画布顶边实测需 >= 楼板底边，故再加 40px 安全余量。 */
+  top:calc(var(--wg-sticky-top, 8px) + var(--slab-total) + 40px);
   align-self:start;
   z-index:30;
 }
