@@ -119,29 +119,28 @@ ul{ margin:0; padding:0; list-style:none; }
 /* ---------- 首屏 Hero ---------- */
 .hero{
   position:relative; z-index:var(--z-ui);
-  min-height:42vh;
   display:flex; flex-direction:column; align-items:center; justify-content:center;
-  text-align:center; padding:34px 20px 16px;
+  text-align:center; padding:24px 20px 8px;
 }
 .hero-sub{
   font:600 12px/1 var(--font); letter-spacing:.42em; text-transform:uppercase;
-  color:var(--gold); margin-bottom:12px;
+  color:var(--gold); margin-bottom:8px;
 }
 .hero-title{
-  font-size:clamp(38px, 7vw, 76px); line-height:1.08;
+  font-size:clamp(32px, 5.6vw, 60px); line-height:1.08;
   /* 浅色实色（原为白→金渐变）。金色仅保留在副标题、数字等点缀处。 */
   color:var(--ink-bright);
   /* 像素风：用硬边描边替代发光，避免柔和的光晕破坏像素锐利感 */
   text-shadow:2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
 }
 .hero-en{
-  margin-top:6px; font:400 13px/1 var(--font-num);
+  margin-top:4px; font:400 13px/1 var(--font-num);
   letter-spacing:.34em; color:var(--ink-dim);
 }
 .hero-desc{
-  margin-top:14px; max-width:560px; color:var(--ink); font-size:15px;
+  margin-top:10px; max-width:560px; color:var(--ink); font-size:14px;
 }
-.hero-tags{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:16px; }
+.hero-tags{ display:flex; flex-wrap:wrap; gap:7px; justify-content:center; margin-top:12px; }
 .tag{
   padding:5px 12px; border:1px solid var(--line); border-radius:0;
   font-size:12px; color:var(--ink); background:rgba(255,255,255,.03);
@@ -155,6 +154,51 @@ ul{ margin:0; padding:0; list-style:none; }
   animation:bob 2.2s var(--ease) infinite;
 }
 @keyframes bob{ 0%,100%{ transform:translateY(0); opacity:.5 } 50%{ transform:translateY(8px); opacity:1 } }
+
+/* ---------- 分页（幻灯片式翻页） ----------
+   第一页 .page--intro 用 sticky 钉在顶部；第二页 .page--resume 在正常
+   流中随滚动上移，天然形成"第二页自下而上盖住第一页"的翻页效果。
+   第二页不使用 transform：transform 会让内部 .col-side 的 sticky
+   面板失去正确的吸附参照，故翻页位移完全交给正常滚动完成。 */
+.deck{ position:relative; z-index:var(--z-ui); }
+
+.page--intro{
+  position:sticky; top:0; z-index:1;
+  height:100vh;
+  /* 有小工具栏的移动端浏览器：vh 会大于可视高度，优先用 svh */
+  height:100svh;
+  display:flex; flex-direction:column; justify-content:center;
+  background:var(--bg);
+  will-change:opacity, transform;
+}
+/* 内容高于视口时（窄屏 / 矮屏）不钉住：
+   sticky 会让超出视口的部分永远滚不到，故退化为普通流。 */
+.page--intro.is-static{ position:relative; height:auto; }
+
+/* 翻页门限：滚过这段距离之前第二页不会出现（高度由 JS 按视口写入） */
+.page-gate{ height:60vh; }
+
+.page--resume{
+  position:relative; z-index:2;
+  /* 翻页时真正盖住第一页：需要不透明底色，否则第一页内容会透出来 */
+  background:var(--bg);
+}
+/* 第二页顶边投影：翻页过程中压在第一页上，强化"一张纸盖上来"的观感 */
+.page--resume::before{
+  content:""; position:absolute; left:0; right:0; top:0; height:64px;
+  transform:translateY(-100%);
+  background:linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.6));
+  pointer-events:none;
+}
+
+/* 门限期提示：绝对定位，不占内容高度（否则会把第一页挤出视口） */
+.page-hint{
+  position:absolute; left:0; right:0; bottom:22px;
+  text-align:center; font-size:12px; letter-spacing:.24em;
+  color:var(--ink-faint); pointer-events:none;
+  opacity:0; transition:opacity .3s var(--ease);
+  text-shadow:1px 1px 0 #000;
+}
 
 /* ---------- 主布局 ---------- */
 .layout{
@@ -207,7 +251,7 @@ ul{ margin:0; padding:0; list-style:none; }
 .projects{
   position:relative; z-index:var(--z-ui);
   max-width:1420px; margin:0 auto;
-  padding:0 20px 32px;
+  padding:8px 20px 20px;
 }
 .proj-title{
   font-size:15px; font-weight:700; color:var(--gold);
@@ -219,16 +263,16 @@ ul{ margin:0; padding:0; list-style:none; }
   color:var(--ink-faint); font-size:13px; letter-spacing:.04em;
 }
 .proj-grid{
-  margin-top:14px;
+  margin-top:12px;
   display:grid;
-  grid-template-columns:repeat(auto-fill, minmax(236px, 1fr));
-  gap:14px;
+  grid-template-columns:repeat(auto-fill, minmax(214px, 1fr));
+  gap:10px;
 }
 /* 提示已移至项目区之后：这里收紧外边距，避免重新把内容推离首屏 */
 .projects .scroll-hint{ margin-top:22px; }
 .proj-card{
   display:flex; flex-direction:column;
-  padding:13px 15px 12px;
+  padding:10px 12px 9px;
   text-decoration:none;
   /* 与时间轴卡片同一套像素石板框，保持视觉一致 */
   border:4px solid transparent;
@@ -254,12 +298,15 @@ ul{ margin:0; padding:0; list-style:none; }
 }
 .proj-card:hover .proj-name .arrow{ opacity:1; transform:translate(2px,-2px); }
 .proj-desc{
-  margin-top:8px; flex:1;
-  color:var(--ink-dim); font-size:13px; line-height:1.68;
+  margin-top:6px; flex:1;
+  color:var(--ink-dim); font-size:12.5px; line-height:1.6;
+  /* 第一页需完整落在一屏内：窄屏卡片变高时截断描述，避免溢出 */
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3;
+  overflow:hidden;
 }
-.proj-tags{ margin-top:10px; display:flex; flex-wrap:wrap; gap:6px; }
+.proj-tags{ margin-top:8px; display:flex; flex-wrap:wrap; gap:5px; }
 .proj-star{
-  margin-top:10px; padding-top:8px;
+  margin-top:8px; padding-top:6px;
   border-top:1px solid var(--line-soft);
   font:600 11px/1 var(--font-num);
   color:var(--gold); letter-spacing:.06em;
@@ -387,7 +434,33 @@ ul{ margin:0; padding:0; list-style:none; }
 .rise{ animation:rise .5s var(--ease-out) both; }
 @keyframes rise{ from{ opacity:0; transform:translateY(10px) } to{ opacity:1; transform:none } }
 
-@media (prefers-reduced-motion: reduce){
+/* 分页：第一页必须完整落在一屏内才能钉住，否则退化为普通流。
+   窄屏下项目卡片会堆成一列导致高度暴涨，这里进一步压缩。 */
+@media (max-width: 700px){
+  .page--intro{ justify-content:flex-start; padding-top:10px; }
+  .hero-title{ font-size:clamp(26px, 7vw, 36px); }
+  .hero-sub{ font-size:11px; letter-spacing:.3em; margin-bottom:6px; }
+  .hero-en{ font-size:11px; letter-spacing:.24em; }
+  .hero-desc{ font-size:12.5px; margin-top:7px; line-height:1.55; }
+  .hero-tags{ margin-top:9px; gap:5px; }
+  .hero-tags .tag{ padding:3px 8px; font-size:10.5px; }
+  .projects{ padding:4px 12px 14px; }
+  .proj-title{ font-size:13px; letter-spacing:.16em; }
+  .proj-sub{ display:none; }
+  .proj-grid{ grid-template-columns:1fr 1fr; gap:6px; margin-top:8px; }
+  .proj-card{ padding:6px 7px 5px; }
+  .proj-name{ font-size:11.5px; }
+  .proj-desc{ -webkit-line-clamp:2; font-size:10.5px; margin-top:4px; line-height:1.45; }
+  .proj-tags, .proj-star{ display:none; }
+  .page-hint{ bottom:14px; font-size:11px; }
+}
+
+@media (max-width: 520px){
+  .hero-desc{ font-size:12px; }
+  .proj-desc{ -webkit-line-clamp:1; }
+  .proj-card{ padding:5px 6px 4px; }
+  .projects{ padding:4px 10px 12px; }
+}
   *,*::before,*::after{ animation-duration:.01ms !important; transition-duration:.01ms !important; }
   html{ scroll-behavior:auto; }
 }

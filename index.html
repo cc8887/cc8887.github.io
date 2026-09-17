@@ -22,31 +22,46 @@
 
 <div class="expbar" aria-hidden="true"><i id="expFill"></i><span id="expText">EXP 0%</span></div>
 
-<header class="hero" id="hero"></header>
+<!-- 分页容器：第一页钉住，第二页自下而上盖住它完成翻页 -->
+<div class="deck" id="deck">
 
-<section class="projects">
-  <h2 class="proj-title">炼金工坊 ・ 项目陈列</h2>
-  <p class="proj-sub">把图形化的东西变成文本，再把文本交给 AI 接手。</p>
-  <div class="proj-grid" id="projGrid"></div>
-  <div class="scroll-hint">向下滚动以展开履历 ▼</div>
-</section>
+  <!-- 第一页：个人简介 + GitHub 仓库陈列 -->
+  <section class="page page--intro" id="pageIntro">
+    <header class="hero" id="hero"></header>
 
-<main class="layout">
-  <div class="col-main">
-    <div class="timeline">
-      <div class="tl-axis"><i id="tlProgress"></i></div>
-      <div class="tl-list" id="chapters"></div>
-    </div>
-  </div>
+    <section class="projects">
+      <h2 class="proj-title">炼金工坊 ・ 项目陈列</h2>
+      <p class="proj-sub">把图形化的东西变成文本，再把文本交给 AI 接手。</p>
+      <div class="proj-grid" id="projGrid"></div>
+    </section>
 
-  <aside class="col-side">
-    <div class="panel-wrap">
-      <div class="dnf-frame panel" id="panel" aria-live="polite">
-        <div class="frame-in"></div>
+    <div class="page-hint" id="pageHint" aria-hidden="true">继续下滑 ・ 进入履历</div>
+  </section>
+
+  <!-- 翻页门限：滚过这段距离之前第二页不会出现 -->
+  <div class="page-gate" id="pageGate" aria-hidden="true"></div>
+
+  <!-- 第二页：履历时间轴 + 数值面板 -->
+  <section class="page page--resume" id="pageResume">
+    <main class="layout">
+      <div class="col-main">
+        <div class="timeline">
+          <div class="tl-axis"><i id="tlProgress"></i></div>
+          <div class="tl-list" id="chapters"></div>
+        </div>
       </div>
-    </div>
-  </aside>
-</main>
+
+      <aside class="col-side">
+        <div class="panel-wrap">
+          <div class="dnf-frame panel" id="panel" aria-live="polite">
+            <div class="frame-in"></div>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </section>
+
+</div>
 
 <footer class="site-foot" id="foot"></footer>
 
@@ -56,6 +71,7 @@
 <script src="assets/js/templates.js" defer></script>
 <script src="assets/js/projects.js" defer></script>
 <script src="assets/js/app.js" defer></script>
+<script src="assets/js/pages.js" defer></script>
 <script src="assets/js/lighting.js" defer></script>
 <script src="assets/js/wallgame.js" defer></script>
 <script src="assets/js/hic-hero.js" defer></script>
