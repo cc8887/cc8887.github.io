@@ -16,9 +16,9 @@
 
 <div class="bg-brick" aria-hidden="true"></div>
 <div class="bg-veil" aria-hidden="true"></div>
-<!-- 2D 光照层占位：仅覆盖【受光层】（砖墙/英雄/怪物），
-     位于其之上、UI 之下，故 UI 元素不受光照影响 -->
-<div class="light-layer" id="lightLayer" aria-hidden="true"></div>
+<!-- 全屏光照层已移除：光照改为【每页一个独立光源】（见 .page-light）。
+     原固定层 z-index:2 位于 .deck（z-index:3，且两页不透明）之下，
+     被完全遮挡、对画面零贡献。 -->
 
 <div class="expbar" aria-hidden="true"><i id="expFill"></i><span id="expText">EXP 0%</span></div>
 
@@ -27,6 +27,7 @@
 
   <!-- 第一页：个人简介 + GitHub 仓库陈列 -->
   <section class="page page--intro" id="pageIntro">
+    <div class="page-light" id="lightIntro" aria-hidden="true"></div>
     <header class="hero" id="hero"></header>
 
     <section class="projects">
@@ -43,6 +44,12 @@
 
   <!-- 第二页：履历时间轴 + 数值面板 -->
   <section class="page page--resume" id="pageResume">
+    <div class="page-light" id="lightResume" aria-hidden="true"></div>
+
+    <!-- 楼板：下一层的"地板"。翻页时随第二页自下而上升起，
+         视觉上就是踩过楼板、下到下一层地牢。 -->
+    <div class="floor-slab" aria-hidden="true"></div>
+
     <main class="layout">
       <div class="col-main">
         <div class="timeline">
