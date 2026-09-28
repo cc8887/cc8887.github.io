@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="cc8887 的游戏动画交互演示：骨骼重定向，以及 ALS 与 Distance Matching 停步对比。">
+  <title>交互演示 · cc8887</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M5 27 27 5M5 5h22v22' stroke='%23f2c14e' stroke-width='3' fill='none'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/blog.css">
+</head>
+<body class="blog-body">
+  <div class="blog-shell">
+    <header class="blog-header">
+      <a class="blog-brand" href="../">cc8887<span> / 交互演示</span></a>
+      <nav class="blog-nav" aria-label="站点导航">
+        <a href="../">首页</a>
+        <a href="../blog/">文章</a>
+        <a href="./" aria-current="page">演示</a>
+      </nav>
+    </header>
+    <main class="blog-main">
+      <p class="blog-kicker">Interactive / Animation</p>
+      <h1 class="blog-heading">交互演示</h1>
+      <p class="blog-lead">通过三维场景查看动画系统的动作与参数变化。</p>
+      <div class="blog-list">
+        <article class="blog-entry">
+          <a href="retarget-lab/" aria-label="打开骨骼重定向实验室">
+            <img src="../assets/img/retarget-lab-poster.jpg" width="1280" height="720" alt="Godot 与 Unreal 骨骼重定向实验室中的两具三维骨架">
+          </a>
+          <div>
+            <div class="blog-meta"><span>Godot 4.7</span><span>Unreal 5.x</span><span>Three.js</span></div>
+            <h2><a href="retarget-lab/">骨骼重定向实验室</a></h2>
+            <p>切换 Godot 与 Unreal 工作流，逐步观察骨架映射、Rest 姿态和 IK 校正；可对比 17→17 与 17→18 拓扑，并直接调节参数。</p>
+            <a class="blog-read" href="retarget-lab/">打开演示 →</a>
+          </div>
+        </article>
+        <article class="blog-entry">
+          <a href="locomotion-comparison/" aria-label="打开 ALS 与 Distance Matching 停步对比">
+            <img src="../assets/img/als-distance-matching-poster.jpg" width="1280" height="720" alt="ALS 与 Distance Matching 两种停步动画的三维对比">
+          </a>
+          <div>
+            <div class="blog-meta"><span>ALS</span><span>Distance Matching</span><span>Three.js</span></div>
+            <h2><a href="locomotion-comparison/">ALS 与 Distance Matching 停步对比</a></h2>
+            <p>调整初速度与制动强度，观察两种停步方案的动画相位、距离曲线与脚部接触。</p>
+            <a class="blog-read" href="locomotion-comparison/">打开演示 →</a>
+          </div>
+        </article>
+      </div>
+    </main>
+    <footer class="blog-footer">© cc8887 · <a href="../">返回个人主页</a> · <a href="../blog/">技术手记</a></footer>
+  </div>
+</body>
+</html>

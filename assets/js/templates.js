@@ -34,7 +34,10 @@
       '<div class="hero-en">' + esc(p.enName) + "</div>" +
       '<p class="hero-desc">' + esc(p.desc) + "</p>" +
       '<div class="hero-tags">' + tags + "</div>" +
-      '<a class="hero-journal" href="blog/">技术手记 <span aria-hidden="true">→</span></a>';
+      '<nav class="hero-links" aria-label="内容导航">' +
+      '<a class="hero-journal" href="blog/">技术手记 <span aria-hidden="true">→</span></a>' +
+      '<a class="hero-journal" href="demos/">交互演示 <span aria-hidden="true">→</span></a>' +
+      '</nav>';
   }
 
   /* ============================================================
