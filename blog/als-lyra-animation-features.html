@@ -77,8 +77,8 @@
           <section id="cross-step" aria-labelledby="cross-step-heading">
             <h2 id="cross-step-heading">04 / 交叉步：输入反向不等于马上换髋</h2>
             <p>右横移途中突然要求向左，当前一只脚可能正跨过身体中线。当帧直接换成相反的腿部姿态，会让双腿交错或瞬间换位。动画系统需要知道<strong>当前是否正在交叉</strong>，同时保留新的移动意图。</p>
-            <div class="mechanism-pair"><div><strong>ALS V4：等动画窗口</strong><span>六方向 F/B/LF/LB/RF/RB 与 VelocityBlend 提供移动姿态。中性换髋需 <code>Feet_Crossing = 0</code>、源状态权重为 1、<code>|HipOrientation_Bias| &lt; 0.5</code>，之后经 ChangeDirection 曲线和腿部 BlendProfile 过渡。</span></div><div><strong>Lyra：适配方向覆盖</strong><span>官方文档描述四向 Strafe 资产与起步时的 Orientation Warping。它解释了请求角度与下身方向如何适配；公开说明没有提供与 <code>Feet_Crossing</code> 对应的交叉步换髋门控。</span></div></div>
-            <p>交互页把摆动脚跨线和抬脚刻意放大。时间轴停在“脚交叉/等待”时，左侧保持原髋；解除交叉且偏向条件满足后才换向。<code>Feet_Crossing</code> 是换髋窗口信号，绝不是上一篇停步使用的 <code>Feet_Position</code> 左右脚曲线。</p>
+            <div class="mechanism-pair"><div><strong>ALS V4：等动画窗口</strong><span>六方向 F/B/LF/LB/RF/RB 与 VelocityBlend 提供移动姿态。中性换髋需 <code>Feet_Crossing = 0</code>、源状态权重为 1、<code>|HipOrientation_Bias| &lt; 0.5</code>，之后经 ChangeDirection 曲线和腿部 BlendProfile 过渡。</span></div><div><strong>Lyra：起步方向适配参照</strong><span>官方文档描述四向 Strafe 资产与<strong>起步时</strong>的 Orientation Warping。它解释了请求角度与下身方向如何适配，但不能证明 Lyra 在反向交叉步中运行同一节点；公开资料也没有给出对应的换髋门控。</span></div></div>
+            <p>交互页把摆动脚跨线和抬脚刻意放大。时间轴停在“脚交叉/等待”时，左侧保持原髋；解除交叉且偏向条件满足后才换向。右侧只借起步机制表达方向适配，<strong>不是 Lyra 反向交叉步原图回放</strong>。<code>Feet_Crossing</code> 是换髋窗口信号，绝不是上一篇停步使用的 <code>Feet_Position</code> 左右脚曲线。</p>
             <p class="article-sources">依据：<a href="https://github.com/cc8887/Godot-Locomotion/blob/main/docs/verification/2026-09-09-locomotion-port-gap-audit.md">ALS 方向图审计</a>、<a href="https://github.com/cc8887/Godot-Locomotion/blob/main/docs/verification/2026-09-10-direction-completeness.md">换髋门控验证</a>、<a href="https://dev.epicgames.com/documentation/unreal-engine/animation-in-lyra-sample-game-in-unreal-engine">Epic Orientation Warping 说明</a>。</p>
           </section>
 
@@ -92,7 +92,8 @@
 
           <section aria-labelledby="scope-heading">
             <h2 id="scope-heading">怎样读这组对照</h2>
-            <p>左侧围绕本地 ALS V4 原图和移植验证记录构造机制模型。脚锁移动平台和 Mantle 生产接入包含本地 Refactored/Godot 扩展，文章已分别标注。右侧只有原地转向、方向适配和装备层可直接对照 Lyra 官方说明；锁脚与攀爬使用明确标识的参照场景。程序化三维人物用于读懂状态、阈值和结果，不能作为原始 UE 资产逐帧运动精度的证据。</p>
+            <p>左侧围绕本地 ALS V4 原图和移植验证记录构造机制模型。脚锁移动平台和 Mantle 生产接入包含本地 Refactored/Godot 扩展，文章已分别标注。本机 UE 5.9 Lyra 检出只有 C++，没有动画 <code>Content/</code>：角色跟随控制器转向、装备切换和动画层选择接口可从代码核对；转身、起步方向适配及 Linked Layer 的实际动画蓝图连线仍依据 Epic 官方说明。锁脚、攀爬和反向交叉步没有可核验的 Lyra 图，只使用标明边界的参照场景。程序化三维人物不能作为原始 UE 资产逐帧运动精度的证据。</p>
+            <p class="article-sources">逐项记录：<a href="https://github.com/cc8887/Godot-Locomotion/blob/main/docs/verification/2026-09-29-lyra-source-audit.md">本机 UE 5.9 Lyra 源码核验</a>。</p>
             <div class="article-actions"><a href="../demos/animation-features/">打开五专题交互演示 →</a><a class="secondary" href="als-distance-matching.html">回看停步与 Distance Matching</a></div>
           </section>
         </div>
