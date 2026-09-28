@@ -6,30 +6,38 @@
     <meta name="theme-color" content="#f7f9f8" />
     <link rel="icon" href="data:," />
     <title>ALS 与 Distance Matching | 停步机制对比</title>
-    <script type="module" crossorigin src="./assets/index-D9FiYZlu.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-CrAL8YPf.css">
+    <script type="module" crossorigin src="./assets/index-DTo_6FSJ.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DGr4wwyy.css">
   </head>
   <body>
     <main class="app-shell">
       <header class="page-header">
         <div>
           <h1>ALS 与 Distance Matching</h1>
-          <p>同一段减速位移，两种动画时间与落脚策略。</p>
+          <p>同一制动轨迹，切换入口脚步相位，看谁决定停点、谁决定落哪只脚。</p>
         </div>
         <span class="model-note">机制示意 · 非 UE / Godot 逐帧回放</span>
       </header>
 
       <section class="workspace" aria-label="同步三维停步演示">
+        <div class="case-toolbar">
+          <div class="case-label"><strong>入口脚相位</strong><span><i class="foot-key left-key"></i>左脚 <i class="foot-key right-key"></i>右脚 · 浅环为入口脚印</span></div>
+          <div class="segmented" role="group" aria-label="选择停步入口相位">
+            <button type="button" data-stop-case="cross" aria-pressed="true">双脚交叉</button>
+            <button type="button" data-stop-case="left" aria-pressed="false">左脚支撑</button>
+            <button type="button" data-stop-case="right" aria-pressed="false">右脚支撑</button>
+          </div>
+        </div>
         <div class="scene-grid">
           <section class="scene-pane als-pane" aria-labelledby="als-title">
             <div class="pane-heading">
               <span class="lane-number">01</span>
               <div>
                 <h2 id="als-title">ALS</h2>
-                <p>状态机 · 脚步相位 · 锁脚</p>
+                <p>Feet_Position → Lock / Plant → 脚锁</p>
               </div>
             </div>
-            <div class="canvas-wrap"><canvas id="als-canvas" aria-label="ALS 三维停步动画"></canvas></div>
+            <div class="canvas-wrap"><canvas id="als-canvas" aria-label="ALS 三维停步动画"></canvas><span class="foot-callout" id="als-callout">左脚撑住 · 右脚跨步</span></div>
             <div class="pane-footer">
               <span class="status-dot als-dot"></span>
               <span id="als-state">移动循环</span>
@@ -40,17 +48,31 @@
             <div class="pane-heading">
               <span class="lane-number">02</span>
               <div>
-                <h2 id="dm-title">Distance Matching</h2>
-                <p>预测距离 · 曲线反查 · 动画时间</p>
+                <h2 id="dm-title">Lyra 使用的距离匹配</h2>
+                <p>剩余距离 → 曲线反查 → 片段时间</p>
               </div>
             </div>
-            <div class="canvas-wrap"><canvas id="dm-canvas" aria-label="Distance Matching 三维停步动画"></canvas></div>
+            <div class="canvas-wrap"><canvas id="dm-canvas" aria-label="Distance Matching 三维停步动画"></canvas><span class="foot-callout" id="dm-callout">固定片段 · 右脚接触</span></div>
             <div class="pane-footer">
               <span class="status-dot dm-dot"></span>
               <span id="dm-state">距离曲线待进入</span>
               <strong id="dm-foot">双脚接触</strong>
             </div>
           </section>
+        </div>
+
+        <div class="decision-strip">
+          <div><span>ALS · Feet_Position</span><strong id="feet-position-readout">+0.18</strong></div>
+          <div><span>ALS · 停步分支</span><strong id="als-branch-readout">Plant Right</strong></div>
+          <div><span>固定片段 · 入口脚位差</span><strong id="phase-jump-readout">0 cm</strong></div>
+        </div>
+        <p class="case-explanation" id="case-explanation">交叉时 p = +0.18：右脚侧尚未压实，ALS 走 Plant Right；固定距离片段会跳到自己的脚位。</p>
+        <div class="phase-toolbar">
+          <div class="segmented" role="group" aria-label="选择距离匹配的入口相位方案">
+            <button type="button" data-phase-mode="distance" aria-pressed="true">仅距离匹配</button>
+            <button type="button" data-phase-mode="adapted" aria-pressed="false">先适配相位</button>
+          </div>
+          <p id="phase-result">固定片段与入口相位冲突；距离相同仍会换脚</p>
         </div>
 
         <div class="transport">
@@ -96,15 +118,15 @@
         <div class="logic-grid">
           <article class="logic-column">
             <div class="logic-heading"><span class="logic-rule als-rule"></span><h3>ALS：按状态与相位停步</h3></div>
-            <p>角色运动先减速。动画依据输入与速度离开 Moving，保留循环动画的脚步相位，再选择左/右脚的 Lock 或 Plant 姿态。Stop Transition 叠加在姿态上，FootLock 和 IK 处理接触。</p>
+            <p>角色运动先减速。Stop 图读取上一移动姿态的 <code>Feet_Position</code>：符号选左/右脚，绝对值是否达到 0.5 选 Lock/Plant。Lock 固定已着地的脚；Plant 先补脚，再转移支撑。</p>
             <div class="formula">Moving <span>→</span> Stop <span>→</span> Not Moving</div>
             <p class="logic-detail">本演示以 1.5 m/s 表示动画的 MovingSmooth 速度门槛；原 ALS 在“仍有输入且仍有速度”时也会继续判为移动。普通停止由状态与脚步相位触发，并不根据预测停止位置反查动画时间。</p>
           </article>
           <article class="logic-column">
             <div class="logic-heading"><span class="logic-rule dm-rule"></span><h3>Distance Matching：按距离选帧</h3></div>
-            <p>先预测角色还会移动多远，再到动画根运动烘焙的距离曲线上二分查找对应时间。该时间同时驱动根位移与片段内的脚步接触轨迹。</p>
+            <p>先预测角色还会移动多远，再到动画根运动烘焙的距离曲线上二分查找对应时间。该时间决定片段内的骨骼姿态；单靠距离值无法知道上一段循环正由哪只脚支撑。</p>
             <div class="formula">d = v² / 2a <span>→</span> C(t) = −d <span>→</span> t</div>
-            <p class="logic-detail">这里使用无摩擦的匀减速示例，以及按约 30 Hz 烘焙、总位移 3.2 m 的程序化片段。接触期脚掌固定在片段世界位置；实际 UE 预测还可使用制动摩擦，切换真实动画资产时仍需处理脚步相位。</p>
+            <p class="logic-detail">右侧固定片段按默认右脚支撑入口设定，让三种入口共用同一脚步相位，凸显节点的相位限制；“先适配相位”是假设已有对应片段的教学对照，不代表 Lyra 原始蓝图的资产选择。接触期脚掌仍固定，不用滑步制造差异。</p>
           </article>
         </div>
       </section>
@@ -118,7 +140,7 @@
           <div class="comparison-row" role="row"><span role="cell">最擅长</span><span role="cell">保持支撑脚与方向姿态连续</span><span role="cell">让片段位移节奏贴合停止位置</span></div>
           <div class="comparison-row" role="row"><span role="cell">需额外处理</span><span role="cell">制动距离与片段节奏不符时的滑步</span><span role="cell">相位跳变、脚接触与预测误差</span></div>
         </div>
-        <p class="closing-note">此页面是教学模型。ALS 分支依据本地 ALS V4 状态图与源码；距离匹配分支使用 UE Animation Locomotion Library 的曲线反查方法和程序化根运动片段。两者共享的物理轨迹经过简化，画面不代表原资产的骨骼求值。</p>
+        <p class="closing-note">此页面是教学模型。ALS 分支依据本地 ALS V4 状态图；Lyra 侧隔离展示 Epic 的 Distance Match to Target 核心规则，固定片段及相位适配对照均是程序化设定。没有导出 Lyra 原始 Stop 图，画面不代表其逐节点或逐骨骼求值。浅色环表示入口脚位，实色环表示当前着地脚。</p>
       </section>
     </main>
   </body>
