@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="用同一段减速轨迹对比 ALS 停步与 Distance Matching，并演示距离曲线反查与脚部接触如何避免滑步。">
+  <title>ALS 停步与 Distance Matching · cc8887 技术手记</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M5 27 27 5M5 5h22v22' stroke='%23f2c14e' stroke-width='3' fill='none'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/blog.css">
+</head>
+<body class="blog-body">
+  <div class="blog-shell">
+    <header class="blog-header">
+      <a class="blog-brand" href="../">cc8887<span> / 技术手记</span></a>
+      <nav class="blog-nav" aria-label="站点导航">
+        <a href="../">首页</a>
+        <a href="./">文章</a>
+      </nav>
+    </header>
+    <main class="blog-main article-main">
+      <article>
+        <header>
+          <p class="blog-kicker">Animation / Locomotion</p>
+          <h1 class="blog-heading">ALS 停步与 Distance Matching：脚步相位和距离曲线</h1>
+          <p class="blog-lead">两套动画方案面对同一条制动轨迹时，决定“何时抬脚、何时落脚”的依据不同。下面的视频把它们放在同一帧里对照。</p>
+          <div class="blog-meta"><time datetime="2026-09-28">2026.09.28</time><span>ALS / Unreal Engine</span><span>约 5 分钟</span></div>
+        </header>
+
+        <figure class="article-video">
+          <video controls playsinline preload="metadata" poster="../assets/img/als-distance-matching-poster.jpg" aria-label="ALS 与 Distance Matching 三维停步对比视频">
+            <source src="../assets/video/als-distance-matching.mp4" type="video/mp4">
+            浏览器无法播放视频。<a href="../assets/video/als-distance-matching.mp4">下载 MP4</a>
+          </video>
+          <figcaption>同一物理减速轨迹，两种动画驱动。视频以半速回放；脚下的色环表示当前接触点。</figcaption>
+        </figure>
+        <div class="article-actions">
+          <a href="../demos/locomotion-comparison/">打开可交互演示 →</a>
+          <a class="secondary" href="../assets/video/als-distance-matching.mp4" download>下载演示视频</a>
+        </div>
+
+        <div class="article-content">
+          <section aria-labelledby="shared-motion">
+            <h2 id="shared-motion">先固定角色的运动</h2>
+            <p>对照实验使用初速度 5 m/s、制动减速度 4 m/s² 的简化模型。角色在 1.25 秒后停下，共移动 3.125 m；两侧始终共享这条轨迹。这样看到的差别来自<strong>动画时间和落脚策略</strong>，不是角色移动速度不同。</p>
+            <div class="article-formula">t<sub>stop</sub> = v<sub>0</sub> / a = 1.25 s <span>　·　</span> d<sub>stop</sub> = v<sub>0</sub>² / (2a) = 3.125 m</div>
+            <p>公式假设匀减速且不计摩擦。真实游戏的制动预测还要匹配 CharacterMovement 的摩擦、制动力和速度边界。</p>
+          </section>
+
+          <section aria-labelledby="als-stop">
+            <h2 id="als-stop">ALS：先决定停步状态与支撑脚</h2>
+            <p>ALS 的 locomotion 图持续观察输入、速度和当前脚步相位。在离开 Moving 时，停步状态与过渡动画沿自身时钟推进，脚锁和补步负责保持已落地脚的接触。它优先解决的是<strong>从循环步态连续进入停步</strong>。</p>
+            <p>这不等于用预测的停止位置反查片段时间。如果角色的实际制动距离与选中的停步片段位移不合，仍需要播放速率、脚锁或 IK 等机制处理观感。</p>
+          </section>
+
+          <section aria-labelledby="distance-match">
+            <h2 id="distance-match">Distance Matching：剩余距离决定片段时间</h2>
+            <p>先用当前速度预测到目标还剩多少距离，再在停步片段的<strong>有符号根位移曲线</strong>中寻找相同距离。曲线在终点前为负，终点为零；对有序采样值二分查找并在相邻样本之间插值，就得到本帧应取的动画时间。</p>
+            <div class="article-formula">d = v² / (2a) <span> → </span> C(t) = −d <span> → </span> t<sub>anim</sub> = C<sup>−1</sup>(−d)</div>
+            <p>视频中的程序化片段根位移为 3.2 m，距离曲线以约 30 Hz 烘焙。每帧查出的同一个 <code>t_anim</code> 驱动根位移和脚步姿态；当所需距离超出片段曲线范围时，演示先播放连续移动循环。</p>
+          </section>
+
+          <section aria-labelledby="foot-slide">
+            <h2 id="foot-slide">为什么反查时间后仍可能滑步？</h2>
+            <p>距离匹配只回答“取哪一帧”，并不自动保证该帧的支撑脚固定。此前演示直接按归一化进度移动脚的位置，角色根部前进时脚也随之平移，所以出现滑步。</p>
+            <p>现在片段为每一步记录接触窗口和接触点。支撑期的局部脚位置由<strong>世界接触点减去当前根位置</strong>得到，因此角色向前走时脚保持在地面同一点；摆动期才让脚抬起并移向下一个接触点。</p>
+            <div class="article-formula">x<sub>foot, local</sub> = x<sub>contact, world</sub> − x<sub>root, world</sub></div>
+            <p>真实动画资产还需要处理片段入口相位、预测误差、地形高度、骨骼插值和 IK。这段视频验证的是距离曲线反查与程序化接触轨迹的机制，不是 Lyra 原始骨骼动画的逐帧复现。</p>
+          </section>
+
+          <section aria-labelledby="takeaway">
+            <h2 id="takeaway">如何选择</h2>
+            <table class="article-table">
+              <thead><tr><th>关注点</th><th>ALS 停步</th><th>Distance Matching</th></tr></thead>
+              <tbody>
+                <tr><td>主要输入</td><td>状态、速度、脚步相位</td><td>预测目标距离、距离曲线</td></tr>
+                <tr><td>动画时间</td><td>播放器和状态过渡推进</td><td>每帧按剩余距离反查</td></tr>
+                <tr><td>额外工作</td><td>片段位移与实际制动对齐</td><td>入口相位、脚接触与预测误差</td></tr>
+              </tbody>
+            </table>
+            <p>两种方法可以组合：距离匹配负责时间与目标位置，状态机和脚部处理负责相位连续与落地稳定。</p>
+          </section>
+        </div>
+      </article>
+    </main>
+    <footer class="blog-footer"><a href="./">← 返回技术手记</a> · <a href="../">个人主页</a></footer>
+  </div>
+</body>
+</html>

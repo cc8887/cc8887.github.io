@@ -33,7 +33,8 @@
       '<h1 class="hero-title">' + esc(p.name) + "</h1>" +
       '<div class="hero-en">' + esc(p.enName) + "</div>" +
       '<p class="hero-desc">' + esc(p.desc) + "</p>" +
-      '<div class="hero-tags">' + tags + "</div>";
+      '<div class="hero-tags">' + tags + "</div>" +
+      '<a class="hero-journal" href="blog/">技术手记 <span aria-hidden="true">→</span></a>';
   }
 
   /* ============================================================
@@ -200,7 +201,10 @@
      ============================================================ */
   function footSite(p) {
     var links = p.links.map(function (l) {
-      return '<a href="' + esc(l.url) + '" target="_blank" rel="noopener">' + esc(l.label) + "</a>";
+      var sameSite = new URL(l.url, w.location.href).origin === w.location.origin;
+      return '<a href="' + esc(l.url) + '"' +
+        (sameSite ? "" : ' target="_blank" rel="noopener"') +
+        '>' + esc(l.label) + "</a>";
     }).join("");
     return '' +
       '<div class="fl">' + links + "</div>" +

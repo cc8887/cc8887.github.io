@@ -18,7 +18,7 @@ window.PROFILE = {
   links: [
     { label: "GitHub",   url: "https://github.com/cc8887" },
     { label: "邮箱",     url: "mailto:qq727626166@gmail.com" },
-    { label: "博客",     url: "#" }
+    { label: "博客",     url: "blog/" }
   ],
   footNote: "本页为个人展示用途，数值设定为游戏化表达，非真实绩效指标。"
 };
