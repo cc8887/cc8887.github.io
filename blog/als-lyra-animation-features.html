@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="用五个交互式三维场景对照 ALS V4 与 Lyra 的锁脚、原地转向、攀爬、交叉步和道具动画切换，并标清公开资料的边界。">
+  <title>ALS V4 与 Lyra：五种动画机制逐项拆解 · cc8887 技术手记</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M5 27 27 5M5 5h22v22' stroke='%23f2c14e' stroke-width='3' fill='none'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/blog.css">
+  <style>
+    .feature-jump{display:flex;flex-wrap:wrap;gap:8px;margin:26px 0 0}
+    .feature-jump a{padding:8px 11px;border:1px solid var(--line);color:var(--ink-bright);font-size:12px;text-decoration:none}
+    .feature-jump a:hover,.feature-jump a:focus-visible{border-color:var(--gold);color:var(--gold)}
+    .article-preview{display:block;margin:32px 0 0;color:var(--ink-dim);text-decoration:none}
+    .article-preview img{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;border:1px solid var(--line)}
+    .article-preview span{display:block;margin-top:8px;color:var(--gold);font-size:13px;font-weight:700}
+    .mechanism-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin:20px 0;padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+    .mechanism-pair>div{min-width:0;padding-left:12px;border-left:2px solid #65ccb1}
+    .mechanism-pair>div+div{border-left-color:#d8855b}
+    .mechanism-pair strong{display:block;color:var(--ink-bright);font-size:13px}
+    .mechanism-pair span{display:block;margin-top:7px;color:var(--ink-dim);font-size:13px;line-height:1.7}
+    .article-content .mechanism-pair code{overflow-wrap:anywhere}
+    @media(max-width:620px){.mechanism-pair{grid-template-columns:1fr}.article-main .blog-heading{font-size:31px}}
+  </style>
+</head>
+<body class="blog-body">
+  <div class="blog-shell">
+    <header class="blog-header">
+      <a class="blog-brand" href="../">cc8887<span> / 技术手记</span></a>
+      <nav class="blog-nav" aria-label="站点导航">
+        <a href="../">首页</a><a href="./">文章</a><a href="../demos/">演示</a>
+      </nav>
+    </header>
+    <main class="blog-main article-main">
+      <article>
+        <header>
+          <p class="blog-kicker">Animation / ALS V4 / Lyra</p>
+          <h1 class="blog-heading">ALS V4 与 Lyra：五种动画机制逐项拆解</h1>
+          <p class="blog-lead">锁脚、原地转向、攀爬、交叉步和换道具，都不能仅靠“播一段动画”解决。五个同步三维场景把输入、门控、姿态和最终结果分开，并指出哪些内容有原图依据，哪些只是教学参照。</p>
+          <div class="blog-meta"><time datetime="2026-09-28">2026.09.28</time><span>动画系统</span><span>约 10 分钟</span></div>
+          <nav class="feature-jump" aria-label="文章章节"><a href="#foot-lock">01 锁脚</a><a href="#turn">02 原地转向</a><a href="#mantle">03 攀爬</a><a href="#cross-step">04 交叉步</a><a href="#equipment">05 道具动画</a></nav>
+        </header>
+
+        <a class="article-preview" href="../demos/animation-features/" aria-label="打开五种动画机制的交互式三维演示">
+          <img src="../assets/img/als-lyra-features-poster.jpg" width="1280" height="720" alt="ALS V4 与 Lyra 五种动画机制的双场景三维对照">
+          <span>打开交互演示，切换条件并拖动时间轴 →</span>
+        </a>
+
+        <div class="article-content">
+          <section id="foot-lock" aria-labelledby="foot-lock-heading">
+            <h2 id="foot-lock-heading">01 / 锁脚：谁拥有地面上的接触点？</h2>
+            <p>支撑脚落地后，角色胶囊仍可能前进或旋转。若脚只跟随骨架局部坐标，地面上的鞋会被根节点拖走。一个有效的锁脚系统至少需要<strong>接触权重</strong>、<strong>稳定的脚点</strong>、每帧的根运动补偿，以及进入和退出支撑期的规则。</p>
+            <div class="article-formula">脚点世界位置 = 接触锚点；脚点局部位置 = 接触锚点 − 当前根位置</div>
+            <div class="mechanism-pair"><div><strong>ALS V4 原图</strong><span><code>FootLock_L/R</code> 曲线给左右脚锁定权重，脚部控制按当前根和地面信息补偿。它不同于停步时决定左右脚分支的 <code>Feet_Position</code>。</span></div><div><strong>右侧参照</strong><span>故意保留未约束的输入脚点，显示滑脚如何产生。它不是 Lyra 的最终脚部输出；Epic 公开的动画概览没有给出可逐节点复核的脚锁捕获、释放规则。</span></div></div>
+            <p>移动平台再增加一个坐标系：脚点要随平台走，同时不能随角色在平台上的移动而漂移。演示的“移动平台”模式使用本地 Refactored 的<strong>基座局部锚点扩展</strong>；不能把这个扩展写成原 ALS V4 的逐帧实现。把锁定权重调低，可以看到从原始脚位到锚点的混合。</p>
+            <p class="article-sources">依据：<a href="https://github.com/cc8887/Godot-Locomotion/blob/main/docs/verification/2026-09-13-based-foot-lock-model.md">本地脚锁版本边界</a>、<a href="https://github.com/cc8887/Godot-Locomotion/blob/main/docs/verification/2026-09-14-final-foot-contact-anchoring.md">最终接触锚点验证</a>、<a href="https://dev.epicgames.com/documentation/unreal-engine/animation-in-lyra-sample-game-in-unreal-engine">Epic Lyra 动画概览</a>。</p>
+          </section>
+
+          <section id="turn" aria-labelledby="turn-heading">
+            <h2 id="turn-heading">02 / 原地转向：让身体追上目标朝向</h2>
+            <p>若控制器一转、Actor 就直接跟转，尚未抬起的脚会绕角色中心扫过地面。若模型完全不转，枪口与身体方向又会持续分离。ALS 与 Lyra 都有转身动画，但暂存朝向差的位置不同。</p>
+            <div class="mechanism-pair"><div><strong>ALS V4：选片并驱动 Actor</strong><span>按目标角符号选左/右；绝对角度严格小于 <code>130°</code> 选 90° 资产，否则选 180°。站/蹲有各自的转身资源，Turn/Rotate Slot 在 Not Moving 内混入，动画曲线和倍率参与实际旋转。</span></div><div><strong>Lyra：Root Yaw Offset 暂存差值</strong><span>Actor 跟随 Controller 先转，Rotate Root Bone 以反向 Root Yaw Offset 暂时保持模型朝向；Idle 转身片段的曲线逐步释放偏移。模式包含 Accumulate、Hold、Blend Out。</span></div></div>
+            <p>交互页可以把目标角拖过 130°：左侧切换资产档位；右侧读数显示 Offset 如何从负的目标角回到 0。右侧的武器子 AnimBP 还能改变转身片段和延迟。三维人物的脚步轨迹是用于读懂变量的示意，不是原始动画资源的逐帧重放。</p>
+            <p class="article-sources">依据：<a href="https://github.com/cc8887/Godot-Locomotion/blob/main/docs/verification/2026-09-12-turn-in-place-selection.md">ALS 选片规则</a>、<a href="https://github.com/cc8887/Godot-Locomotion/blob/main/docs/verification/2026-09-11-standing-turn-slot-placement.md">Turn Slot 接线</a>、<a href="https://dev.epicgames.com/documentation/unreal-engine/animation-in-lyra-sample-game-in-unreal-engine">Epic Lyra 转身说明</a>。</p>
+          </section>
+
+          <section id="mantle" aria-labelledby="mantle-heading">
+            <h2 id="mantle-heading">03 / 攀爬：先判定空间，再播放动作</h2>
+            <p>按下攀爬键不意味着必然起播。角色要找到前方墙面、可站的顶部和穿越过程的净空；还要按台高、空中状态与手中道具选动作，并把最终落点对齐到真实平台。移动平台的目标位置在动作期间也会变化。</p>
+            <div class="mechanism-pair"><div><strong>本地 ALS Mantle 链</strong><span>前向/顶部/净空探测 → 高度与 Overlay 选 Montage → RootMotionSource 对齐根轨迹 → 平台局部目标。地面高度范围为 50–225 cm，空中为 50–150 cm；无净空时拒绝起播。</span></div><div><strong>Lyra 公开资料的范围</strong><span>官方动画概览可核对 Jump、Fall、Land/Idle 等基础空中路径，却未提供可验证的 Mantle 查询、选片与根运动图。右侧只用这条跳跃路径作参照，不能据此推断 Lyra 是否具备其他攀爬实现。</span></div></div>
+            <p>演示中把净空切为“阻挡”，左侧会保持在台下且不触发动作；调整高度可观察可接受台面与根轨迹。三维障碍、射线和轨迹用于解释门控，不包含完整 CharacterMovement 碰撞求解。</p>
+            <p class="article-sources">依据：<a href="https://github.com/cc8887/Godot-Locomotion/blob/main/docs/verification/2026-09-26-mantling-demo.md">普通 Demo 的 Mantle 接入</a>、<a href="https://github.com/cc8887/Godot-Locomotion/blob/main/docs/verification/2026-09-24-mantle-inputs.md">Mantle 输入与资源</a>、<a href="https://dev.epicgames.com/documentation/unreal-engine/animation-in-lyra-sample-game-in-unreal-engine">Epic Lyra 空中状态说明</a>。</p>
+          </section>
+
+          <section id="cross-step" aria-labelledby="cross-step-heading">
+            <h2 id="cross-step-heading">04 / 交叉步：输入反向不等于马上换髋</h2>
+            <p>右横移途中突然要求向左，当前一只脚可能正跨过身体中线。当帧直接换成相反的腿部姿态，会让双腿交错或瞬间换位。动画系统需要知道<strong>当前是否正在交叉</strong>，同时保留新的移动意图。</p>
+            <div class="mechanism-pair"><div><strong>ALS V4：等动画窗口</strong><span>六方向 F/B/LF/LB/RF/RB 与 VelocityBlend 提供移动姿态。中性换髋需 <code>Feet_Crossing = 0</code>、源状态权重为 1、<code>|HipOrientation_Bias| &lt; 0.5</code>，之后经 ChangeDirection 曲线和腿部 BlendProfile 过渡。</span></div><div><strong>Lyra：适配方向覆盖</strong><span>官方文档描述四向 Strafe 资产与起步时的 Orientation Warping。它解释了请求角度与下身方向如何适配；公开说明没有提供与 <code>Feet_Crossing</code> 对应的交叉步换髋门控。</span></div></div>
+            <p>交互页把摆动脚跨线和抬脚刻意放大。时间轴停在“脚交叉/等待”时，左侧保持原髋；解除交叉且偏向条件满足后才换向。<code>Feet_Crossing</code> 是换髋窗口信号，绝不是上一篇停步使用的 <code>Feet_Position</code> 左右脚曲线。</p>
+            <p class="article-sources">依据：<a href="https://github.com/cc8887/Godot-Locomotion/blob/main/docs/verification/2026-09-09-locomotion-port-gap-audit.md">ALS 方向图审计</a>、<a href="https://github.com/cc8887/Godot-Locomotion/blob/main/docs/verification/2026-09-10-direction-completeness.md">换髋门控验证</a>、<a href="https://dev.epicgames.com/documentation/unreal-engine/animation-in-lyra-sample-game-in-unreal-engine">Epic Orientation Warping 说明</a>。</p>
+          </section>
+
+          <section id="equipment" aria-labelledby="equipment-heading">
+            <h2 id="equipment-heading">05 / 换道具：网格、挂点和动画层必须一致</h2>
+            <p>换成手枪时，改的不是一张手枪模型而已。双手如何握持、上身如何瞄准、移动和原地转向用哪组资源，以及道具挂在哪根骨上，都要与装备状态同步。只切一边会出现空手握枪或手穿过道具。</p>
+            <div class="mechanism-pair"><div><strong>ALS V4：Overlay 驱动姿态</strong><span>本地导出有 13 种 Overlay。Rifle、Pistol、Bow、Torch、Box 等分支选择姿态/上身动画，道具附着于对应虚拟手骨并随最终骨骼更新；弓拉弦还有曲线驱动的姿态。</span></div><div><strong>Lyra：装备链接子动画层</strong><span>Quick Bar 选择装备，EquipmentDefinition/Instance 生成持物 Actor。武器子 AnimBP 可继承 <code>ABP_ItemAnimLayersBase</code>，通过 Link Anim Class Layers 替换移动、瞄准和骨骼控制等实现。</span></div></div>
+            <p>在演示中切换手枪与步枪，可以看到左侧 Overlay、右侧武器层和手中物体一同变化。弓、火把、箱子在右侧标为<strong>需自行扩展</strong>，没有把 ALS 的这些资产误认成 Lyra 自带示例。切换时间只表达依赖顺序，不模拟网络装备事务。</p>
+            <p class="article-sources">依据：<a href="https://github.com/cc8887/Godot-Locomotion/blob/main/docs/verification/2026-09-20-overlay-props.md">ALS Overlay 与道具挂点</a>、<a href="https://dev.epicgames.com/documentation/unreal-engine/lyra-inventory-and-equipment-in-unreal-engine">Epic Lyra 装备系统</a>、<a href="https://dev.epicgames.com/documentation/unreal-engine/animation-in-lyra-sample-game-in-unreal-engine">Epic Lyra 动画层</a>。</p>
+          </section>
+
+          <section aria-labelledby="scope-heading">
+            <h2 id="scope-heading">怎样读这组对照</h2>
+            <p>左侧围绕本地 ALS V4 原图和移植验证记录构造机制模型。脚锁移动平台和 Mantle 生产接入包含本地 Refactored/Godot 扩展，文章已分别标注。右侧只有原地转向、方向适配和装备层可直接对照 Lyra 官方说明；锁脚与攀爬使用明确标识的参照场景。程序化三维人物用于读懂状态、阈值和结果，不能作为原始 UE 资产逐帧运动精度的证据。</p>
+            <div class="article-actions"><a href="../demos/animation-features/">打开五专题交互演示 →</a><a class="secondary" href="als-distance-matching.html">回看停步与 Distance Matching</a></div>
+          </section>
+        </div>
+      </article>
+    </main>
+    <footer class="blog-footer"><a href="./">← 返回技术手记</a> · <a href="../demos/">交互演示</a> · <a href="../">个人主页</a></footer>
+  </div>
+</body>
+</html>
