@@ -1,4 +1,5 @@
 import {DURATION_SECONDS as bannerDur} from "./motion.js";
+import {INDOOR_WINDOW_START, INDOOR_WINDOW_END} from "./lighting.js?v=window-sync-1";
 const $ = (id)=>document.getElementById(id);
 const title=$("scene-title"), status=$("scene-status"), stage=$("stage"), message=$("stage-message");
 const progressInput=$("progress"), wellInput=$("well"), percentage=$("percentage"), wellValue=$("well-value");
@@ -7,7 +8,7 @@ const keyframes=[...document.querySelectorAll("[data-progress]")];
 const viewControls={outside:$("outside"),inside:$("inside")};
 const i18n={
   outside:{title:"教学楼外墙",label:"外景",states:["横幅卷起","横幅延展中","红布盖住外墙"]},
-  inside:{title:"三层走廊",label:"内景",states:["白色顶灯与窗边日光","顶灯退暗，左窗红光渐强","左窗红光主导，尽头留冷光"]},
+  inside:{title:"三层走廊",label:"内景",states:["白色顶灯与窗边日光","窗布下落，顶灯与窗光同步过渡","左窗红光主导，尽头留冷光"]},
 };
 let canvas=$("scene");
 let view="outside",progress=0,well=0.8,time=0;
@@ -26,7 +27,9 @@ function controls(){
   wellValue.value=w+"%";
   for(const key of keyframes)key.setAttribute("aria-pressed",String(Math.abs(Number(key.dataset.progress)-progress)<.005));
   for(const [name,btn] of Object.entries(viewControls))btn.setAttribute("aria-pressed",String(name===view));
-  const idx=progress===0?0:progress===1?2:1;
+  const idx=view==="inside"
+    ?(progress<=INDOOR_WINDOW_START?0:progress>=INDOOR_WINDOW_END?2:1)
+    :(progress===0?0:progress===1?2:1);
   const zone=view+"/"+idx;
   if(currentRegion!==zone){
     currentRegion=zone;
@@ -115,7 +118,7 @@ async function setupFallback(){
     const replacement=canvas.cloneNode(false);
     canvas.replaceWith(replacement);
     canvas=replacement;
-    const mod=await import("./fallback.js?v=weighted-hem-1");
+    const mod=await import("./fallback.js?v=window-sync-1");
     const f=mod.createFallback(canvas);
     bindEngine({type:"fallback",resize:()=>f.resize(),draw:(state)=>f.draw(state)},"兼容预览");
   }catch(error){console.error(error);unavailable();}
@@ -127,7 +130,7 @@ async function init(){
     const gl=canvas.getContext("webgl2",{antialias:true,alpha:false,powerPreference:"low-power"});
     if(!gl){await setupFallback();return;}
     const [THREE,{createExterior},{createInterior}]=await Promise.all([
-      import("./vendor/three.module.js"),import("./exterior.js?v=weighted-hem-1"),import("./interior.js?v=weighted-hem-1"),
+      import("./vendor/three.module.js"),import("./exterior.js?v=weighted-hem-1"),import("./interior.js?v=window-sync-1"),
     ]);
     const renderer=new THREE.WebGLRenderer({canvas,context:gl,antialias:true,alpha:false});
     renderer.outputColorSpace=THREE.SRGBColorSpace;

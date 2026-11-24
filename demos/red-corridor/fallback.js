@@ -1,5 +1,5 @@
 import { PANEL_COUNT, panelMotion } from './motion.js';
-import { interiorCue } from './lighting.js';
+import { interiorCue } from './lighting.js?v=window-sync-1';
 // A geometry-first Canvas fallback: independent of WebGL, textures and external assets.
 // Canvas surfaces are lit locally by distinct daylight and red-light palettes.
 const TAU = Math.PI * 2;
@@ -206,7 +206,7 @@ export function createFallback(canvas){
   }
  }
  function inside(progress,time,well){
-  const {red,day,overhead}=interiorCue(progress), ratio=w/h;
+  const {red,day,overhead,cover,reflections}=interiorCue(progress), ratio=w/h;
   const len=33, left=-1.8,right=1.85, camX=-.73, eye=1.66;
   const van=[w*(ratio<1?.60:.64),h*.449];
   const focal=h*(ratio<1?.91:1.35);
@@ -270,9 +270,8 @@ export function createFallback(canvas){
   for(let i=0;i<10;i++){
    const z=2.65+i*3;
    const pulse=.52+.47*hash(i+366);
-   const {red:b,reflections}=interiorCue(progress,i);
    const L=p(left,0,z+.92),R=p(.65,0,z-.45);
-   const g=grad(L[0],L[1],R[0],R[1],[[0,'rgba(226,211,155,'+(.28*day*(1-b))+')'],[.27,'rgba(233,40,30,'+(.35*reflections*pulse)+')'],[1,'rgba(182,24,23,0)']]);
+   const g=grad(L[0],L[1],R[0],R[1],[[0,'rgba(226,211,155,'+(.28*day)+')'],[.27,'rgba(233,40,30,'+(.35*reflections*pulse)+')'],[1,'rgba(182,24,23,0)']]);
    polygon([p(left,0,z+1.09),p(left,0,z-.12),p(.92,0,z-.99),p(.57,0,z-.46)],g);
    const glow=p(-.66,0,z+.12);
    ctx.save();ctx.translate(glow[0],glow[1]);ctx.scale(.47,1);
@@ -286,37 +285,44 @@ export function createFallback(canvas){
   }
   ctx.fillStyle=grad(0,h*.59,w*.10,h,[[0,'#11090b00'],[1,'rgba(8,5,8,'+(.10+red*.58)+')']]);ctx.fillRect(0,h*.49,w,h*.51);
   ctx.restore();
-  // Nearest geometry drawn last. Each bay has its own practical light contribution.
+  // Nearest geometry drawn last. Every window shares one occlusion and light cue.
   for(let i=9;i>=0;i--){
    const z=.12+i*3.24,z2=Math.min(len,z+3.24);
-   const {red:r,cover,spill}=interiorCue(progress,i);
-   const q=hash(i+8);const x=p(left,0,z+.47)[0];
+   const r=red;
+   const q=hash(i+8);
    const top=p(left,2.89,z+.61), bottom=p(left,1.04,z2-.4);
+   // The uncovered section remains genuine green-gray daylight glass. Only
+   // geometry actually masked by the descending red cloth is filtered red.
    const panel=grad(top[0],top[1],bottom[0],bottom[1],[
-    [0,rgb([174,201,197],[242,66,62],r)],[.42,rgb([187,209,194],[218,25,33],r)],[1,rgb([106,143,139],[151,12,22],r)]]);
+    [0,'#aec9c5'],[.42,'#bbd1c2'],[1,'#6a8f8b']]);
    const near=Math.max(.35,z+.39), far=z2-.38, wpos=left+.022;
    wall(wpos,near,1.075,far,2.85,'#272c29');
    wall(wpos+.005,near+.035,1.115,far-.040,2.807,panel);
-   if(r<.94){
-    const overlay=(1-r)*(.28+q*.25);
+   if(cover<1){
+    const overlay=.28+q*.25;
     ctx.globalAlpha=overlay;
     wall(wpos+.009,near+.06,1.12,far-.051,1.65,grad(0,bottom[1],0,top[1],[[0,'#697d4d'],[.65,'#283d3355'],[1,'#c4d1b800']]));
     wall(wpos+.010,near+.12,1.78,far-.16,2.74,'#edf4d744');
     ctx.globalAlpha=1;
    }
-   // Translucent printed columns descend inside the frame as the banners land.
-   const covered=cover;
-   if(covered>0.019){
-    ctx.save();polygon([p(wpos,2.79,near+.03),p(wpos,2.79,far-.035),p(wpos,1.13,far-.035),p(wpos,1.13,near+.03)],null);ctx.clip();
+   // One common sweep covers the glass top-down. The same cover value
+   // drives room lighting, the red region, and the leading folded seam.
+   if(cover>0){
+    const gx=wpos+.005,zNear=near+.035,zFar=far-.040,high=2.807,low=1.115;
+    ctx.save();wall(gx,zNear,low,zFar,high,null);ctx.clip();
     for(let k=0;k<4;k++){
-     const s=mix(near+.08,far-.08,k/4), e=mix(near+.10,far-.07,(k+1)/4);
-     const y=mix(2.78,1.07,covered), hot=.8+.19*Math.sin(time*1.6+i*.44+k*.38);
-     wall(wpos+.019,s,y,e,2.79,rgb([143,19,29],[241,62,61],r*hot));
-     wallLine(wpos+.02,e-.011,y,e-.011,2.79,'rgba(255,190,144,'+r*.46+')',Math.max(.52,1.9/(.9+s*.13)));
+     const s=mix(zNear,zFar,k/4), e=mix(zNear,zFar,(k+1)/4);
+     const y=mix(high,low,cover), hot=.8+.19*Math.sin(time*1.6+i*.44+k*.38);
+     const paneRed=(.65+.35*r)*hot;
+     // Very small overlap avoids antialias cracks; the aperture clips all edges.
+     wall(gx,s-.002,y,e+.002,high,rgb([143,19,29],[241,62,61],paneRed));
+     wallLine(gx,e-.011,y,e-.011,high,'rgba(255,190,144,'+r*.46+')',Math.max(.52,1.9/(.9+s*.13)));
+     if(cover<1)wall(gx,s,y,e,Math.min(high,y+.026),'#801d27');
+     ctx.save();wall(gx,s,y,e,high,null);ctx.clip();
      for(let row=0;row<5;row++){
       const hm=2.65-row*.314;
       if(hm<y+.05)break;
-      const m=p(wpos+.021,hm,mix(s,e,.54)),f=focal/(mix(s,e,.54)+.38);
+      const m=p(gx,hm,mix(s,e,.54)),f=focal/(mix(s,e,.54)+.38);
       // The reference is seen from the reverse cloth side.
       if(f>12){
        ctx.save();ctx.translate(...m);ctx.scale(-.70,1);
@@ -324,6 +330,7 @@ export function createFallback(canvas){
        ctx.restore();
       }
      }
+     ctx.restore();
     }
     ctx.restore();
    }
@@ -340,7 +347,7 @@ export function createFallback(canvas){
    // Red light spills onto the ceiling edge, behind the nearer beam.
    const yCeil=ceilY-.012;
    const aa=p(left+.02,yCeil,z+.57),bb=p(left+2.68,yCeil,z+1.04);
-   flat(yCeil,left+.02,z+.42,left+2.84,z2-.49,grad(...aa,...bb,[[0,'rgba(252,62,49,'+(spill*.23)+')'],[.60,'rgba(254,43,35,'+(spill*.09)+')'],[1,'#f5272400']]));
+   flat(yCeil,left+.02,z+.42,left+2.84,z2-.49,grad(...aa,...bb,[[0,'rgba(252,62,49,'+(r*.23)+')'],[.60,'rgba(254,43,35,'+(r*.09)+')'],[1,'#f5272400']]));
    // Slightly uneven, warm bounce on the opposing classroom wall.
    const ry=p(right-.02,.70,z2-1.14),rr=p(right-.02,1.82,z+.84);
    wall(right-.014,z+.67,.36,z2-.57,2.01,grad(...ry,...rr,[[0,'#a30c1100'],[.57,'rgba(190,31,37,'+(r*.29)+')'],[1,'#ac121500']]));

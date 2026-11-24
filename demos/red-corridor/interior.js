@@ -1,4 +1,4 @@
-import {interiorCue} from './lighting.js';
+import {interiorCue} from './lighting.js?v=window-sync-1';
 
 // Interior of a fictional school, matched by rhythm and light rather than by address.
 // The two states share a model; separate banks of practical lights do the switching.
@@ -76,28 +76,33 @@ export function createInterior(THREE) {
   const trayGeo=new THREE.CylinderGeometry(.159,.163,.067,18);
   const puckGeo=new THREE.CylinderGeometry(.129,.156,.061,18);
   const shadeMaterial=()=>new THREE.ShaderMaterial({
-    uniforms:{cover:{value:0},spill:{value:0},id:{value:0}},
+    uniforms:{cover:{value:0},id:{value:0}},
     vertexShader:`
       varying vec2 coords; void main(){coords=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}
     `,
     fragmentShader:`
-      uniform float cover,spill,id; varying vec2 coords;
+      uniform float cover,id; varying vec2 coords;
       void main(){
         vec2 p=coords;
-        float f=smoothstep(1.-cover-.006,1.-cover+.006,p.y)*step(.0001,cover);
-        float wave=.66+.19*cos(p.x*75.+id)+.07*cos(p.x*159.+(p.y+.1)*1.7+id);
+        float edge=1.-cover;
+        float f=cover<=0.?0.:cover>=1.?1.:smoothstep(edge-.005,edge+.005,p.y);
+        // Sample from behind the leading hem. Fixed cloth markings travel down
+        // with it, rather than appearing to fill a stationary red rectangle.
+        float clothY=p.y+cover-1.;
+        float wave=.66+.19*cos(p.x*75.+id)+.07*cos(p.x*159.+(clothY+.1)*1.7+id);
         float slit=pow(max(0.,sin(p.x*517.+id)),34.)*.15+pow(max(0.,cos(p.x*181.+id)),75.)*.13;
         vec3 daylight=mix(vec3(.24,.38,.39),vec3(.74,.84,.82),smoothstep(0.,.82,p.y));
         daylight+=.032*sin(p.x*4.+2.9*p.y+id);
-        daylight=mix(daylight,vec3(.51,.15,.15),spill*.34*(.46+.54*p.y));
         vec3 vermilion=mix(vec3(.30,.005,.035),vec3(.94,.024,.085),wave);
-        vec2 inkUV=vec2(1.-p.x,p.y)*vec2(13.,6.);
+        vec2 inkUV=vec2(1.-p.x,clothY)*vec2(13.,6.);
         vec2 cell=fract(inkUV), board=floor(inkUV);
         float stem=(1.-smoothstep(.045,.079,abs(cell.x-.53)))*smoothstep(.13,.25,cell.y)*(1.-smoothstep(.72,.85,cell.y));
         float arms=(1.-smoothstep(.038,.069,abs(cell.y-.30-.32*step(.5,cos(board.x+board.y*2.)))))
           *smoothstep(.23,.36,cell.x)*(1.-smoothstep(.69,.79,cell.x));
         vermilion=mix(vermilion,vec3(.96,.30,.35),max(stem,arms)*.18);
         vermilion+=slit*vec3(.8,.42,.59);
+        float hem=1.-smoothstep(.004,.025,max(0.,clothY));
+        vermilion*=1.-.28*hem*step(.0001,cover)*(1.-step(.9999,cover));
         gl_FragColor=vec4(mix(daylight,vermilion,f),1.);
         #include <colorspace_fragment>
       }
@@ -281,32 +286,27 @@ export function createInterior(THREE) {
   }
 
   function update({progress=0,time=0,well=1}={}){
-    const p=clamp(progress), whole=interiorCue(p), darkness=whole.red;
+    const cue=interiorCue(progress), darkness=cue.red;
     const exitStrength=well===false?0:well===true||!Number.isFinite(well)?1:clamp(well);
-    const nearby=windows.map((_,i)=>interiorCue(p,i,windows.length));
-    const sample=(i,arr)=>nearby[Math.round(i*(nearby.length-1)/Math.max(1,arr.length-1))];
-    const natural=whole.day;
+    const natural=cue.day;
     heaven.intensity=.045+.865*natural;
     ambientFill.intensity=.072+.10*natural;
     end.intensity=2.0+(10.5+4.7*darkness)*exitStrength;
     coolCyan.color.setRGB(.034,.050,.053).lerp(strongCyan,exitStrength);
     skyCyan.color.setRGB(.043,.061,.067).lerp(strongSky,exitStrength);
-    for(const [i,l] of ordinary.entries())l.intensity=(6.4-i*.34)*sample(i,ordinary).day;
-    for(const [i,l] of overhead.entries())l.intensity=5.9*sample(i,overhead).overhead;
-    for(const [i,l] of litCeilings.entries())l.emissiveIntensity=.002+.628*nearby[i].overhead;
-    for(const [i,w] of windows.entries()){
-      w.shade.uniforms.cover.value=nearby[i].cover;
-      w.shade.uniforms.spill.value=nearby[i].spill;
-    }
+    for(const [i,l] of ordinary.entries())l.intensity=(6.4-i*.34)*cue.day;
+    for(const l of overhead)l.intensity=5.9*cue.overhead;
+    for(const l of litCeilings)l.emissiveIntensity=.002+.628*cue.overhead;
+    for(const w of windows)w.shade.uniforms.cover.value=cue.cover;
     for(const [i,l] of lamps.entries()){
-      const lit=sample(i,lamps).red;
+      const lit=cue.red;
       const amplitude=(.985+.015*Math.sin(time*.83+i*1.72));
       l.intensity=creepy[i].power*lit*amplitude;
     }
     redBounce.intensity=darkness*5.1;
     function draw(pool,strength){pool.visible=strength>.001;pool.material.uniforms.amp.value=strength;}
-    for(const [i,pool] of floorPools.entries())draw(pool,sample(i,floorPools).reflections*(.050+(i%3)*.014));
-    for(const [i,pool] of wallPools.entries())draw(pool,sample(i,wallPools).reflections*(.037+(i%3)*.04));
+    for(const [i,pool] of floorPools.entries())draw(pool,cue.reflections*(.050+(i%3)*.014));
+    for(const [i,pool] of wallPools.entries())draw(pool,cue.reflections*(.037+(i%3)*.04));
     draw(bluePool,(.074+.10*darkness)*exitStrength);
     draw(whitePool,.087*natural);
   }
