@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <meta name="description" content="cc8887 的游戏动画交互演示：骨骼重定向、ALS 与 Distance Matching 停步，以及 ALS V4 与 Lyra 五种动画机制对比。">
-  <title>交互演示 · cc8887</title>
+  <meta name="description" content="cc8887 的作品展示：通过三维场景和交互原型探索关卡布光、风格化渲染和游戏动画。">
+  <title>作品展示 · cc8887</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M5 27 27 5M5 5h22v22' stroke='%23f2c14e' stroke-width='3' fill='none'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="../assets/css/main.css">
   <link rel="stylesheet" href="../assets/css/blog.css">
@@ -13,18 +13,29 @@
 <body class="blog-body">
   <div class="blog-shell">
     <header class="blog-header">
-      <a class="blog-brand" href="../">cc8887<span> / 交互演示</span></a>
+      <a class="blog-brand" href="../">cc8887<span> / 作品展示</span></a>
       <nav class="blog-nav" aria-label="站点导航">
         <a href="../">首页</a>
         <a href="../blog/">文章</a>
-        <a href="./" aria-current="page">演示</a>
+        <a href="./" aria-current="page">作品展示</a>
       </nav>
     </header>
     <main class="blog-main">
-      <p class="blog-kicker">Interactive / Animation & Rendering</p>
-      <h1 class="blog-heading">交互演示</h1>
-      <p class="blog-lead">通过三维场景与可视化对照，查看动画机制和风格化渲染。</p>
+      <p class="blog-kicker">Portfolio / Interactive Studies</p>
+      <h1 class="blog-heading">作品展示</h1>
+      <p class="blog-lead">三维场景、游戏动画与渲染实验。每个作品都可以打开实际操作。</p>
       <div class="blog-list">
+        <article class="blog-entry">
+          <a href="red-corridor/" aria-label="打开红幕后场景原型">
+            <img src="red-corridor/cover.svg" width="1280" height="720" alt="红光推向走廊深处，尽头保留一扇冷白色的门">
+          </a>
+          <div>
+            <div class="blog-meta"><span>Three.js</span><span>关卡气氛</span><span>光照设计</span></div>
+            <h2><a href="red-corridor/">红幕后</a></h2>
+            <p>红布从教学楼屋檐垂下，白色顶灯退暗，窗边的红光接管走廊。切换室内外视角、拖动展开进度，比较同一空间的两种布光。</p>
+            <a class="blog-read" href="red-corridor/">打开作品 →</a>
+          </div>
+        </article>
 <article class="blog-entry"><a href="npr-anime/" aria-label="打开二次元 NPR 实验室"><img src="npr-anime/images/Anime_NPR_Comparison.png" width="1280" height="720" alt="六种二次元 NPR 渲染对照"></a><div><div class="blog-meta"><span>NPR</span><span>二次元渲染</span><span>教学对照</span></div><h2><a href="npr-anime/">二次元 NPR 实验室</a></h2><p>二分、法线、局部阈值、面部控制与条带高光。六组案例、常见算法、公开资料及 Godot 迁移边界。</p><a class="blog-read" href="npr-anime/">打开实验室 →</a></div></article>
         <article class="blog-entry">
           <a href="animation-features/" aria-label="打开 ALS V4 与 Lyra 动画机制对照">

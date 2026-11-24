@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="教学楼的红色横幅落下后，同一条普通走廊变成了另一番景象。">
+  <title>红幕后 · 场景原型</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header class="mast"><span class="mast-brand"><span class="mast-mark" aria-hidden="true"></span>环境试验场</span><a class="mast-type gallery-return" href="../">返回作品展示</a></header>
+  <main class="shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">教学楼 / 日常与异变</p>
+        <h1>红幕后</h1>
+      </div>
+      <p class="intro">横幅从屋檐垂下。隔着一层红布，<br class="wide-break">原本寻常的走廊换了光。</p>
+    </header>
+    <section class="workbench" aria-labelledby="scene-title">
+      <div class="viewbar">
+        <div class="view-copy"><h2 id="scene-title">教学楼外墙</h2><span class="readout" id="scene-status" aria-live="polite">横幅卷起</span></div>
+        <div class="segmented" role="group" aria-label="场景视角">
+          <button type="button" id="outside" aria-pressed="true">教学楼外</button>
+          <button type="button" id="inside" aria-pressed="false">走廊内</button>
+        </div>
+      </div>
+      <div class="stage" id="stage" aria-busy="true">
+        <canvas id="scene" role="img" aria-label="教学楼外墙，横幅卷起"></canvas>
+        <p class="stage-message" id="stage-message" role="status">正在搭建场景…</p>
+        <div class="scene-strip" aria-hidden="true"><span class="frame-label" id="shot"><span class="rec-dot"></span>外景</span><span class="engine" id="engine"></span></div>
+      </div>
+      <div class="controls">
+        <div class="timeline">
+          <div class="range-head"><label for="progress">横幅展开进度</label><output id="percentage" for="progress">0%</output></div>
+          <input class="range" id="progress" type="range" min="0" max="100" step="1" value="0">
+          <div class="keyframes" role="group" aria-label="关键状态">
+            <button type="button" data-progress="0" aria-pressed="true">卷起</button>
+            <button type="button" data-progress="0.5" aria-pressed="false">半落</button>
+            <button type="button" data-progress="1" aria-pressed="false">垂满</button>
+          </div>
+        </div>
+        <div class="transport" role="group" aria-label="播放控制">
+          <button type="button" id="reset" title="复位" aria-label="复位"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7v5h5M5.3 11.6a7 7 0 1 1 1.9 5.7"/></svg></button>
+          <button type="button" id="reverse"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6.5 7 12l7.5 5.5z"/></svg><span>反放</span></button>
+          <button class="primary" type="button" id="play"><svg viewBox="0 0 24 24" aria-hidden="true"><path id="play-icon" d="m9 6.5 7.5 5.5L9 17.5z"/></svg><span id="play-caption">播放落幕</span></button>
+        </div>
+      </div>
+    </section>
+    <section class="details" aria-label="场景设计说明">
+      <article class="detail lighting">
+        <p class="eyebrow"><span class="beam beam-red" aria-hidden="true"></span>红光来自左窗</p>
+        <h2>不把整条走廊染成红色</h2>
+        <p>白色顶灯减弱，左窗接替成主光。窗框切碎红光，地砖留住倒影，近处走廊压暗。墙、地和门用的是同一套材质。</p>
+      </article>
+      <article class="detail exit">
+        <p class="eyebrow"><span class="beam beam-cyan" aria-hidden="true"></span>冷光留在尽头</p>
+        <h2>给红色一个边界</h2>
+        <p>保留尽头的冷白光，让它和两侧红光拉开距离。</p>
+        <div class="range-head"><label for="well">尽头冷光</label><output id="well-value" for="well">80%</output></div>
+        <input class="range" id="well" type="range" min="0" max="100" step="1" value="80" aria-describedby="well-tip">
+        <span class="setting-note" id="well-tip">切到走廊内可查看这个变化。</span>
+      </article>
+    </section>
+    <footer><span>红幕后 · 教学楼布光试验</span><span>虚构场景 / 实时预览</span></footer>
+  </main>
+  <noscript><p class="no-script">此场景需要启用 JavaScript 才能播放。</p></noscript>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

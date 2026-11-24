@@ -36,7 +36,7 @@
       '<div class="hero-tags">' + tags + "</div>" +
       '<nav class="hero-links" aria-label="内容导航">' +
       '<a class="hero-journal" href="blog/">技术手记 <span aria-hidden="true">→</span></a>' +
-      '<a class="hero-journal" href="demos/">交互演示 <span aria-hidden="true">→</span></a>' +
+      '<a class="hero-journal" href="demos/">作品展示 <span aria-hidden="true">→</span></a>' +
       '</nav>';
   }
 
