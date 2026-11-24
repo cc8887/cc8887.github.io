@@ -1,4 +1,4 @@
-import {interiorCue} from './lighting.js?v=window-accelerated-1';
+import {interiorCue} from './lighting.js?v=window-stagger-1';
 
 // Interior of a fictional school, matched by rhythm and light rather than by address.
 // The two states share a model; separate banks of practical lights do the switching.
@@ -289,24 +289,27 @@ export function createInterior(THREE) {
     const cue=interiorCue(progress), darkness=cue.red;
     const exitStrength=well===false?0:well===true||!Number.isFinite(well)?1:clamp(well);
     const natural=cue.day;
+    const windowStep=windows[0].z-windows[1].z;
+    const localCover=z=>cue.bayCoverages[Math.max(0,Math.min(windows.length-1,
+      Math.round((windows[0].z-z)/windowStep)))];
     heaven.intensity=.045+.865*natural;
     ambientFill.intensity=.072+.10*natural;
     end.intensity=2.0+(10.5+4.7*darkness)*exitStrength;
     coolCyan.color.setRGB(.034,.050,.053).lerp(strongCyan,exitStrength);
     skyCyan.color.setRGB(.043,.061,.067).lerp(strongSky,exitStrength);
-    for(const [i,l] of ordinary.entries())l.intensity=(6.4-i*.34)*cue.day;
+    for(const [i,l] of ordinary.entries())l.intensity=(6.4-i*.34)*(1-localCover(l.position.z));
     for(const l of overhead)l.intensity=5.9*cue.overhead;
     for(const l of litCeilings)l.emissiveIntensity=.002+.628*cue.overhead;
-    for(const w of windows)w.shade.uniforms.cover.value=cue.cover;
+    for(const [i,w] of windows.entries())w.shade.uniforms.cover.value=cue.bayCoverages[i];
     for(const [i,l] of lamps.entries()){
-      const lit=cue.red;
+      const lit=localCover(l.position.z);
       const amplitude=(.985+.015*Math.sin(time*.83+i*1.72));
       l.intensity=creepy[i].power*lit*amplitude;
     }
     redBounce.intensity=darkness*5.1;
     function draw(pool,strength){pool.visible=strength>.001;pool.material.uniforms.amp.value=strength;}
-    for(const [i,pool] of floorPools.entries())draw(pool,cue.reflections*(.050+(i%3)*.014));
-    for(const [i,pool] of wallPools.entries())draw(pool,cue.reflections*(.037+(i%3)*.04));
+    for(const [i,pool] of floorPools.entries())draw(pool,localCover(pool.position.z)*(.050+(i%3)*.014));
+    for(const [i,pool] of wallPools.entries())draw(pool,localCover(pool.position.z)*(.037+(i%3)*.04));
     draw(bluePool,(.074+.10*darkness)*exitStrength);
     draw(whitePool,.087*natural);
   }

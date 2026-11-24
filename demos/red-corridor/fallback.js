@@ -1,5 +1,5 @@
 import { PANEL_COUNT, panelMotion } from './motion.js';
-import { interiorCue } from './lighting.js?v=window-accelerated-1';
+import { interiorCue, interiorBayCover } from './lighting.js?v=window-stagger-1';
 // A geometry-first Canvas fallback: independent of WebGL, textures and external assets.
 // Canvas surfaces are lit locally by distinct daylight and red-light palettes.
 const TAU = Math.PI * 2;
@@ -206,7 +206,9 @@ export function createFallback(canvas){
   }
  }
  function inside(progress,time,well){
-  const {red,day,overhead,cover,reflections}=interiorCue(progress), ratio=w/h;
+  const {red,overhead}=interiorCue(progress), ratio=w/h;
+  const bayCount=10;
+  const localCover=Array.from({length:bayCount},(_,i)=>interiorBayCover(progress,i,bayCount));
   const len=33, left=-1.8,right=1.85, camX=-.73, eye=1.66;
   const van=[w*(ratio<1?.60:.64),h*.449];
   const focal=h*(ratio<1?.91:1.35);
@@ -267,8 +269,9 @@ export function createFallback(canvas){
    oval(pos[0],pos[1],sx,Math.max(.42,sx*.083),'#c1eff4');
    ctx.globalAlpha=1;
   }
-  for(let i=0;i<10;i++){
-   const z=2.65+i*3;
+  for(let i=0;i<bayCount;i++){
+   const z=2.65+i*3.24;
+   const reflections=localCover[i],day=1-reflections;
    const pulse=.52+.47*hash(i+366);
    const L=p(left,0,z+.92),R=p(.65,0,z-.45);
    const g=grad(L[0],L[1],R[0],R[1],[[0,'rgba(226,211,155,'+(.28*day)+')'],[.27,'rgba(233,40,30,'+(.35*reflections*pulse)+')'],[1,'rgba(182,24,23,0)']]);
@@ -285,10 +288,10 @@ export function createFallback(canvas){
   }
   ctx.fillStyle=grad(0,h*.59,w*.10,h,[[0,'#11090b00'],[1,'rgba(8,5,8,'+(.10+red*.58)+')']]);ctx.fillRect(0,h*.49,w,h*.51);
   ctx.restore();
-  // Nearest geometry drawn last. Every window shares one occlusion and light cue.
-  for(let i=9;i>=0;i--){
+  // Nearest geometry drawn last. Each bay's own front drives its local light.
+  for(let i=bayCount-1;i>=0;i--){
    const z=.12+i*3.24,z2=Math.min(len,z+3.24);
-   const r=red;
+   const r=localCover[i],cover=r;
    const q=hash(i+8);
    const top=p(left,2.89,z+.61), bottom=p(left,1.04,z2-.4);
    // The uncovered section remains genuine green-gray daylight glass. Only
@@ -305,14 +308,17 @@ export function createFallback(canvas){
     wall(wpos+.010,near+.12,1.78,far-.16,2.74,'#edf4d744');
     ctx.globalAlpha=1;
    }
-   // One common sweep covers the glass top-down. The same cover value
-   // drives room lighting, the red region, and the leading folded seam.
+   // This bay follows its own top-down front. A little seam sag varies the
+   // four strips without changing their total covered area or exposing the sill.
    if(cover>0){
     const gx=wpos+.005,zNear=near+.035,zFar=far-.040,high=2.807,low=1.115;
     ctx.save();wall(gx,zNear,low,zFar,high,null);ctx.clip();
     for(let k=0;k<4;k++){
      const s=mix(zNear,zFar,k/4), e=mix(zNear,zFar,(k+1)/4);
-     const y=mix(high,low,cover), hot=.8+.19*Math.sin(time*1.6+i*.44+k*.38);
+     // Offsets sum to zero across the four equal sections. The envelope
+     // tapers to zero at both limits, preserving exact no-spill/full cover.
+     const notch=[-.028,.020,-.011,.019][(k+i*3)%4]*(4*cover*(1-cover));
+     const y=mix(high,low,cover+notch), hot=.8+.19*Math.sin(time*1.6+i*.44+k*.38);
      const paneRed=(.65+.35*r)*hot;
      // Very small overlap avoids antialias cracks; the aperture clips all edges.
      wall(gx,s-.002,y,e+.002,high,rgb([143,19,29],[241,62,61],paneRed));
