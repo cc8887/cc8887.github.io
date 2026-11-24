@@ -1,9 +1,10 @@
+import { PANEL_COUNT, panelMotion } from './motion.js';
+import { interiorCue } from './lighting.js';
 // A geometry-first Canvas fallback: independent of WebGL, textures and external assets.
 // Canvas surfaces are lit locally by distinct daylight and red-light palettes.
 const TAU = Math.PI * 2;
 const clamp = x => Math.max(0, Math.min(1, x));
 const mix = (a,b,t) => a+(b-a)*t;
-const smooth = (a,b,v) => { const x=clamp((v-a)/(b-a)); return x*x*(3-2*x); };
 const hash = (i) => { const x=Math.sin(i*127.1+311.7)*43758.5453;return x-Math.floor(x); };
 const rgb=(a,b,t)=>'rgb('+a.map((v,i)=>Math.round(mix(v,b[i],t))).join(',')+')';
 const glyphs=['勤学笃行','静思敏学','知行合一','志存高远','明德格物','博学善思','循序渐进','求真务实','精进不息','励志力行','笃行致远','温故知新'];
@@ -77,8 +78,8 @@ export function createFallback(canvas){
   // Right side returns from the long face, under deeper shade.
   const br=f(1,1),tr=f(1,0);const sx=w*.063,sy=h*.027;
   polygon([tr,[tr[0]+sx,tr[1]+sy],[br[0]+sx*.80,br[1]-.045*h],br],grad(tr[0],0,tr[0]+sx,0,[[0,'#69463d'],[1,'#47342d']]));
-  for(let j=0;j<5;j++){
-   const v=.065+j*.189;
+  for(let j=0;j<6;j++){
+   const v=.059+j*.158;
    polygon([f(1,v),[f(1,v)[0]+sx*.78,f(1,v)[1]+sy*.6],[f(1,v+.13)[0]+sx*.76,f(1,v+.13)[1]+sy*.19],f(1,v+.13)],'#283a39');
    rowLine(.99,v+.139,1,v+.139,'#c7a38b',1);
   }
@@ -90,7 +91,7 @@ export function createFallback(canvas){
     const u=(i+(j%4)*.25)/60;if(u<1)rowLine(u,v-.0147,u,v,'#e0ba9d38',.7);
    }
   }
-  const levelN=5, bayN=21;
+  const levelN=6, bayN=21;
   for(let j=0;j<levelN;j++){
    const t=(j+.235)/levelN,b=(j+.908)/levelN;
    face(.008,t-.016,.994,b+.013,'#654a3c');
@@ -110,18 +111,21 @@ export function createFallback(canvas){
   face(0,-.026,1,-.003,'#626f67');
   rowLine(-.007,-.03,1.004,-.03,'#d4d0b5',h*.0052);
   rowLine(0,-.005,1,-.005,'#494d42',h*.001);
-  // Each cloth is unrolled from its own dark cylinder. The hem tracks the same
-  // wall baseline but small phase/wind variations produce tangible separation.
-  const n=56;const bw=w*.799/n;
+  // Each cloth unrolls from a fixed roof spool. Its fabric-wrapped bottom weight
+  // descends with the hem and follows that strip's settle/recoil rather than the spool.
+  const n=PANEL_COUNT;const bw=w*.799/n;
   for(let j=0;j<n;j++){
    const l=.031+j*.951/n+(.002*(j%2)),r=l+.947/n;
-   const base=.720+.018*hash(j+21),top=.011+.004*hash(j+141);
-   const delay=.016+.19*(j/n)+.066*hash(j+13);
-   const a=smooth(delay,.852+.105*hash(j+23),progress);
-   const bottom=top+(base-top)*a;
-   const flap=Math.sin(time*2.4+j*.37);
-   const warp=(u,v)=>{const p=f(u,v);return [p[0]+bw*.12*Math.sin(v*27+time*2.3+j*.7)*a*(v-top),p[1]+h*.006*flap*((v-top)/(base-top))**2];};
-   if(a>.008){
+   const base=.685+.018*hash(j+21),top=.011+.004*hash(j+141);
+   const state=panelMotion(progress,j,n);
+   const a=state.drop, held=clamp(a);
+   const bottom=top+.018*(1-held)+(base-top)*a;
+   const taut=1-clamp(Math.abs(state.velocity)/1.2)*.75;
+   const asymmetry=.0025*Math.sin(j*.85+time*2.5)*(1+Math.abs(state.recoil)*10)*taut;
+   const warp=(u,v)=>{const p=f(u,v),travel=(v-top)/(base-top),edge=(u-l)/(r-l)-.5;
+    return [p[0]+bw*(.22*Math.sin(v*38-time*5+j*.59)*travel*taut+.8*state.recoil*edge),
+      p[1]+h*asymmetry*edge*travel*travel];};
+   if(a>.002){
     const p1=warp(l,top),p2=warp(r,top),p3=warp(r,bottom),p4=warp(l,bottom+.006*a);
     const shadow=[p1,p2,p3,p4].map(([x,y])=>[x+h*.004,y+h*.006]);
     polygon(shadow,'#30180a68');
@@ -140,10 +144,23 @@ export function createFallback(canvas){
      line([m,e],k%2?'#f6bd991e':'#3d0e171d',.85);
     }
     ctx.restore();
-    line([p4,p3],'#ffada288',Math.max(.55,h*.0014));
+    line([p4,p3],'#d96867a4',Math.max(.48,h*.0014));
    }
+   // The cloth-wrapped weight is a folded oxblood seam, not shiny hardware.
+   // Its lip stays legible at both the roof and the sill.
+   const yTrim=bottom+.006*a;
+   const a1=warp(l-.0015,yTrim),a2=warp(r+.0015,bottom);
+   const bar=Math.max(2.6,h*.0067);
+   polygon([[a1[0]+bar*.32,a1[1]+bar*.81],[a2[0]+bar*.34,a2[1]+bar*.77],
+    [a2[0]+bar*.48,a2[1]+bar*1.37],[a1[0]+bar*.47,a1[1]+bar*1.48]],'#3412188f');
+   polygon([a1,a2,[a2[0],a2[1]+bar],[a1[0],a1[1]+bar]],'#6c202b');
+   line([[a1[0],a1[1]+bar*.13],[a2[0],a2[1]+bar*.13]],'#a6434a',Math.max(.74,bar*.20));
+   line([[a1[0],a1[1]+bar*.91],[a2[0],a2[1]+bar*.91]],'#501820',Math.max(.57,bar*.19));
+   const cap=Math.max(.8,bar*.36);
+   polygon([a1,[a1[0]+cap,a1[1]],[a1[0]+cap,a1[1]+bar],[a1[0],a1[1]+bar]],'#853039');
+   polygon([[a2[0]-cap,a2[1]],a2,[a2[0],a2[1]+bar],[a2[0]-cap,a2[1]+bar]],'#87313b');
    const start=f(l-.001,top),end=f(r+.001,top);
-   const roll=h*(.010-.005*a);
+   const roll=h*(.010-.006*held);
    line([start,end],'#63232a',roll);
    line([[start[0],start[1]-roll*.24],[end[0],end[1]-roll*.24]],'#df6261',roll*.25);
    oval(start[0],start[1],roll*.32,roll*.43,'#572b2d');
@@ -189,7 +206,7 @@ export function createFallback(canvas){
   }
  }
  function inside(progress,time,well){
-  const red=smooth(.12,.89,progress), ratio=w/h;
+  const {red,day,overhead}=interiorCue(progress), ratio=w/h;
   const len=33, left=-1.8,right=1.85, camX=-.73, eye=1.66;
   const van=[w*(ratio<1?.60:.64),h*.449];
   const focal=h*(ratio<1?.91:1.35);
@@ -253,25 +270,26 @@ export function createFallback(canvas){
   for(let i=0;i<10;i++){
    const z=2.65+i*3;
    const pulse=.52+.47*hash(i+366);
-   const b=localRed(progress,i);
+   const {red:b,reflections}=interiorCue(progress,i);
    const L=p(left,0,z+.92),R=p(.65,0,z-.45);
-   const g=grad(L[0],L[1],R[0],R[1],[[0,'rgba(226,211,155,'+(.28*(1-b))+')'],[.27,'rgba(233,40,30,'+(.35*b*pulse)+')'],[1,'rgba(182,24,23,0)']]);
+   const g=grad(L[0],L[1],R[0],R[1],[[0,'rgba(226,211,155,'+(.28*day*(1-b))+')'],[.27,'rgba(233,40,30,'+(.35*reflections*pulse)+')'],[1,'rgba(182,24,23,0)']]);
    polygon([p(left,0,z+1.09),p(left,0,z-.12),p(.92,0,z-.99),p(.57,0,z-.46)],g);
    const glow=p(-.66,0,z+.12);
    ctx.save();ctx.translate(glow[0],glow[1]);ctx.scale(.47,1);
    const rad=Math.min(h*.20,focal*.34/(z+.38));
-   oval(0,0,rad,rad,radial(0,0,rad,[[0,'rgba(235,37,42,'+(.22*b*pulse)+')'],[1,'#cf162500']]));
+   oval(0,0,rad,rad,radial(0,0,rad,[[0,'rgba(235,37,42,'+(.22*reflections*pulse)+')'],[1,'#cf162500']]));
    ctx.restore();
    for(let k=0;k<5;k++){
     const s=z+(k-.8)*.18,r=p(mix(-1.25,-.75,hash(k+i*13)),0,s), rr=Math.max(.65,focal*.035/(s+.38));
-    oval(r[0],r[1],rr*3,rr*.76,'rgba(224,65,46,'+(.14*b*pulse)+')');
+    oval(r[0],r[1],rr*3,rr*.76,'rgba(224,65,46,'+(.14*reflections*pulse)+')');
    }
   }
   ctx.fillStyle=grad(0,h*.59,w*.10,h,[[0,'#11090b00'],[1,'rgba(8,5,8,'+(.10+red*.58)+')']]);ctx.fillRect(0,h*.49,w,h*.51);
   ctx.restore();
   // Nearest geometry drawn last. Each bay has its own practical light contribution.
   for(let i=9;i>=0;i--){
-   const z=.12+i*3.24,z2=Math.min(len,z+3.24),r=localRed(progress,i);
+   const z=.12+i*3.24,z2=Math.min(len,z+3.24);
+   const {red:r,cover,spill}=interiorCue(progress,i);
    const q=hash(i+8);const x=p(left,0,z+.47)[0];
    const top=p(left,2.89,z+.61), bottom=p(left,1.04,z2-.4);
    const panel=grad(top[0],top[1],bottom[0],bottom[1],[
@@ -287,7 +305,7 @@ export function createFallback(canvas){
     ctx.globalAlpha=1;
    }
    // Translucent printed columns descend inside the frame as the banners land.
-   const covered=smooth(.11,.91,progress+.06-Math.min(.16,i*.009));
+   const covered=cover;
    if(covered>0.019){
     ctx.save();polygon([p(wpos,2.79,near+.03),p(wpos,2.79,far-.035),p(wpos,1.13,far-.035),p(wpos,1.13,near+.03)],null);ctx.clip();
     for(let k=0;k<4;k++){
@@ -322,7 +340,7 @@ export function createFallback(canvas){
    // Red light spills onto the ceiling edge, behind the nearer beam.
    const yCeil=ceilY-.012;
    const aa=p(left+.02,yCeil,z+.57),bb=p(left+2.68,yCeil,z+1.04);
-   flat(yCeil,left+.02,z+.42,left+2.84,z2-.49,grad(...aa,...bb,[[0,'rgba(252,62,49,'+(r*.23)+')'],[.60,'rgba(254,43,35,'+(r*.09)+')'],[1,'#f5272400']]));
+   flat(yCeil,left+.02,z+.42,left+2.84,z2-.49,grad(...aa,...bb,[[0,'rgba(252,62,49,'+(spill*.23)+')'],[.60,'rgba(254,43,35,'+(spill*.09)+')'],[1,'#f5272400']]));
    // Slightly uneven, warm bounce on the opposing classroom wall.
    const ry=p(right-.02,.70,z2-1.14),rr=p(right-.02,1.82,z+.84);
    wall(right-.014,z+.67,.36,z2-.57,2.01,grad(...ry,...rr,[[0,'#a30c1100'],[.57,'rgba(190,31,37,'+(r*.29)+')'],[1,'#ac121500']]));
@@ -363,8 +381,8 @@ export function createFallback(canvas){
    const cPos=p(.12,3.36,z2-1.45), fw=focal/(z2-1.07);
    if(fw>4){
     oval(cPos[0],cPos[1],fw*.126,fw*.040,rgb([153,155,143],[60,15,17],r));
-    oval(cPos[0],cPos[1]+fw*.006,fw*.103,fw*.027,rgb([244,239,207],[103,38,34],r*(i%4===2?.73:1)));
-    const fluoro=(1-r)*(i%4===1?.65:.92);
+    oval(cPos[0],cPos[1]+fw*.006,fw*.103,fw*.027,rgb([244,239,207],[103,38,34],1-overhead*(i%4===2?.77:1)));
+    const fluoro=overhead*(i%4===1?.65:.92);
     if(fluoro>.025){
      const glow=grad(cPos[0]-fw*.74,cPos[1],cPos[0]+fw*.74,cPos[1],[[0,'#e9e8c000'],[.5,'rgba(255,247,207,'+(fluoro*.25)+')'],[1,'#e9e8c000']]);
      oval(cPos[0],cPos[1],fw*.66,fw*.082,glow);
@@ -388,7 +406,6 @@ export function createFallback(canvas){
    }
   }
  }
- function localRed(p,i){const delay=.012*i+.012*hash(i+12);return smooth(.10+delay,.84+delay*.72,p);}
  function draw({view='outside',progress=0,time=0,well=.75}={}){
   if(!w||!h)resize();
   if(w<2||h<2)return;

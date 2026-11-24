@@ -1,15 +1,12 @@
 // Original procedural architectural model, inspired by the supplied references.
-export const SCHOOL = Object.freeze({width:58.8, depth:13.4, levels:6, floor:3.24, strips:56, front:5.8});
+import {PANEL_COUNT,NOMINAL_LENGTH,panelMotion,panelTiming,coverageAt} from "./motion.js";
+export {panelDrop} from "./motion.js";
+export const SCHOOL = Object.freeze({width:58.8, depth:13.4, levels:6, floor:3.24, strips:PANEL_COUNT, front:5.8});
 const {width:W,depth:D,levels:LEVELS,floor:F,strips:N,front:Z}=SCHOOL;
 const clamp=(x,min=0,max=1)=>Math.max(min,Math.min(max,x));
 const lerp=(a,b,t)=>a+(b-a)*t;
 const smooth=(a,b,t)=>{let u=clamp((t-a)/(b-a));return u*u*(3-2*u);};
 const hash=n=>((Math.sin(n*91.3458+78.521)*47453.5453)%1+1)%1;
-export function panelDrop(progress,i){
- const delay=.14*(i/(N-1))+.046*hash(i+11);
- const u=clamp((progress-delay)/(.78-.04*hash(i+73)));
- return u*u*(3-2*u);
-}
 function painted(T,w,h,fn){
  if(typeof document==='undefined')return null;
  const c=document.createElement('canvas');c.width=w;c.height=h;
@@ -48,7 +45,8 @@ function clothPattern(T,variant){
    const v=hash(i+variant*71);p.fillStyle=v>.5?'rgba(255,194,146,.08)':'rgba(70,0,20,.13)';
    p.fillRect(hash(i*12+variant*31)*128,hash(i*17+4)*1024,1+v*4,1);
   }
-  p.fillStyle='rgba(255,151,151,.33)';p.fillRect(4,0,1,1024);p.fillRect(122,0,1,1024);
+  p.fillStyle='rgba(54,7,23,.18)';p.fillRect(0,0,5,1024);p.fillRect(123,0,5,1024);
+  p.fillStyle='rgba(255,151,151,.30)';p.fillRect(4,0,1,1024);p.fillRect(122,0,1,1024);
   p.fillStyle='#ebd2b9';p.textAlign='center';p.textBaseline='middle';
   p.font='700 50px "Noto Sans CJK SC","Microsoft YaHei","PingFang SC",sans-serif';
   const label=[...sayings[variant]];
@@ -82,6 +80,7 @@ export function createExterior(T){
  const brick=make(brickMap?0xffffff:0xa1624f,{map:brickMap});
  const plaster=make(0xb5a897), beam=make(0xa39b87), curb=make(0xc3baab), dark=make(0x30382f);
  const whiteFrame=make(0x9dac9d,{roughness:.52}), glass=make(0x729b94,{roughness:.39,metalness:.18,emissive:0x324e48,emissiveIntensity:.24});
+ const coveredGlass=glass.clone();
  const glassInserts=[0x5c7d73,0x789184,0x4c6861,0x91a195,0x68827e].map(c=>make(c,{roughness:.56}));
  const mortar=make(0x777269), door=make(0x4b5248), canopy=make(0xa9a494), trim=make(0x394240);
  const plainBox=new T.BoxGeometry(1,1,1);
@@ -140,7 +139,7 @@ export function createExterior(T){
    box(dx-.29,1.66,.073,x,winY+.21,front+.166,glassInserts[(j*4+level*3)%glassInserts.length]);
    for(let k=0;k<3;k++){
     const xx=x+(k-1)*(dx-.26)/3;
-    box((dx-.37)/3,1.52,.049,xx,winY+.216,front+.209,glass);
+    box((dx-.37)/3,1.52,.049,xx,winY+.216,front+.209,level>=2?coveredGlass:glass);
     if(hash(j*31+level*9+k)>.67)box(.15,1.45,.018,xx+(k%2?.26:-.26),winY+.21,front+.241,glassInserts[(j+level)%5]);
    }
    for(let k=0;k<4;k++)box(.047,1.72,.092,x+(k-1.5)*(dx-.24)/3,winY+.21,front+.267,whiteFrame);
@@ -245,13 +244,14 @@ export function createExterior(T){
   objects.computeBoundingSphere();scene.add(objects);
  }
  castPatch(0,Z+1.75,51,7,.70);
- const strips=[],L=13.28,hangY=top+.42,panelSpacing=(W-2.44)/N,stripWidth=panelSpacing*.915;
+ const strips=[],L=NOMINAL_LENGTH,hangY=top+.42,panelSpacing=(W-2.44)/N,stripWidth=panelSpacing*.915;
  const bannerMat=sayings.map((_,i)=>{
   const map=clothPattern(T,i);
   return make(map?0xffffff:0xb22736,{side:T.DoubleSide,roughness:.91,map,emissive:0x4d050d,emissiveIntensity:.14});
  });
  const rolls=make(0x812334,{roughness:.94}),hanger=make(0x555349);
- const rollGeom=new T.CylinderGeometry(1,1,1,16),railGeom=new T.CylinderGeometry(.035,.035,W-1.87,12);
+ const seam=make(0x7f2633,{roughness:1}),seamEnd=make(0x61212a,{roughness:1});
+ const rollGeom=new T.CylinderGeometry(1,1,1,16),endGeom=new T.SphereGeometry(1,10,6),railGeom=new T.CylinderGeometry(.035,.035,W-1.87,12);
  const rail=new T.Mesh(railGeom,hanger);rail.rotation.z=Math.PI/2;rail.position.set(0,hangY+.106,Z+.632);scene.add(rail);
  const U=4,V=23;
  for(let i=0;i<N;i++){
@@ -268,44 +268,68 @@ export function createExterior(T){
   mesh.frustumCulled=false;mesh.name='垂直横幅 '+String(i+1).padStart(2,'0');scene.add(mesh);
   const roll=new T.Mesh(rollGeom,rolls);roll.rotation.z=Math.PI/2;roll.rotation.order='YXZ';scene.add(roll);
   roll.name='布卷 '+String(i+1).padStart(2,'0');
-  strips.push({mesh,roll,i,edge:L+hash(i+66)*.22});
+  const weightedHem=new T.Object3D();
+  weightedHem.name='夹布配重 '+String(i+1).padStart(2,'0');
+  const sleeve=new T.Mesh(rollGeom,seam);
+  sleeve.rotation.z=Math.PI/2;sleeve.scale.set(.047,stripWidth*.986,.029);weightedHem.add(sleeve);
+  for(const sign of [-1,1]){
+   const cap=new T.Mesh(endGeom,seamEnd);
+   cap.position.x=sign*stripWidth*.49;
+   cap.scale.set(.023,.044,.028);weightedHem.add(cap);
+  }
+  scene.add(weightedHem);
+  strips.push({mesh,roll,weightedHem,i,edge:L+hash(i+66)*.22});
  }
  let previousProgress=NaN, previousT=NaN;
  function update({progress=0,time=0}={}){
   progress=clamp(progress);
   if(progress===previousProgress&&time===previousT)return;
   previousProgress=progress;previousT=time;
-  for(const {mesh,roll,i,edge} of strips){
-   const drop=panelDrop(progress,i),length=drop*edge;
+  for(const {mesh,roll,weightedHem,i,edge} of strips){
+   const motion=panelMotion(progress,i);
+   const drop=motion.drop,length=drop*edge;
    const q=mesh.geometry.attributes.position,tu=mesh.geometry.attributes.uv;
    mesh.visible=length>.02;
    const freq=i*.81, gust=Math.sin(time*.99+freq*.17)*.62+Math.sin(time*2.3+freq*.36)*.25;
-   const waveAge=1-smooth(.64,.986,drop);
+   const tensionAge=motion.phase==='catch'?Math.sqrt(2*panelTiming(i).normalizedAcceleration)*(1-motion.settle):0;
+   const waveAge=Math.min(1,.94*(motion.phase==='fall'?motion.velocity:tensionAge));
+   const strike=motion.phase==='catch'?edge*motion.recoil:0;
    const zOffset=(u,t)=>{
     const phase=time*2.12-t*14.6+freq;
     const edgeWeight=.45+Math.abs(2*u-1)*.55;
-    return t*drop*(.048+.062*gust)
-     +.086*drop*t*edgeWeight*Math.sin(phase)
-     +.095*waveAge*drop*t*Math.sin(time*3.3-t*21+freq*.65)
-     +.021*drop*t*Math.cos((u-.5)*9+t*4+i);
+    return t*drop*(.048+.057*gust)
+     +.075*drop*t*edgeWeight*Math.sin(phase)*(1-.36*t*t)
+     +.095*waveAge*drop*t*Math.sin(time*3.3-t*21+freq*.65)*(1-.45*t*t)
+     +.020*drop*t*Math.cos((u-.5)*9+t*4+i)
+     +.17*strike*t*t;
    };
-   const xOffset=t=>t*drop*(.055*gust+.034*Math.sin(time*2.31-t*13+freq));
+   const xOffset=t=>t*drop*(.045*gust+.028*Math.sin(time*2.31-t*13+freq));
+   const yOffset=(u,t)=>(.028*drop*t*t*Math.sin(u*Math.PI)+.13*strike*t*t)*(.6+.4*t);
    if(mesh.visible){
     for(let v=0;v<=V;v++)for(let u=0;u<=U;u++){
      const a=u/U,t=v/V,k=v*(U+1)+u,x=(a-.5)*stripWidth;
-     q.setXYZ(k,x+xOffset(t),-length*t+.047*drop*t*t*Math.sin(a*3.14),zOffset(a,t));
-     tu.setY(k,1-(length/edge)*t); // only reveal material already unrolled, never stretch characters
+     const bend=a+(0.5-a)*t*t*.63; // the weight straightens the final fold along the hem
+     q.setXYZ(k,x+xOffset(t),-length*t+yOffset(bend,t),zOffset(bend,t));
+     tu.setY(k,1-clamp(drop)*t); // reveal printed cloth rather than scaling whole glyph column
     }
     q.needsUpdate=tu.needsUpdate=true;mesh.geometry.computeVertexNormals();
    }
-   const rad=lerp(.133,.023,Math.pow(drop,.6));
-   roll.position.set(mesh.position.x+xOffset(1),hangY-length,Z+.654+zOffset(.5,1)+.23*rad);
-   roll.rotation.y=(zOffset(0,1)-zOffset(1,1))/stripWidth;
+   const rad=lerp(.143,.024,Math.pow(clamp(drop),.59));
+   roll.position.set(mesh.position.x,hangY+.042,Z+.654+rad*.21);
+   roll.rotation.y=0;
    roll.scale.set(rad,stripWidth*1.015,rad);
+   // Dark-red fabric sleeve, no exposed hardware. The bar remains attached to
+   // the fabric edge through the overshoot and pulls it straight in x/z.
+   weightedHem.position.set(mesh.position.x+xOffset(1),hangY-length+yOffset(.5,1)-.023,Z+.654+zOffset(.5,1));
+   weightedHem.rotation.y=Math.atan2(zOffset(.815,1)-zOffset(.185,1),-stripWidth);
+   // The cylinder is symmetrical; keep this small-angle representation stable.
+   if(weightedHem.rotation.y>Math.PI/2)weightedHem.rotation.y-=Math.PI;
+   else if(weightedHem.rotation.y< -Math.PI/2)weightedHem.rotation.y+=Math.PI;
   }
-  // Upper uncovered glazing loses contrast as the fabric reaches the lower covered storeys.
-  glass.color.setRGB(lerp(.175,.096,progress),lerp(.324,.199,progress),lerp(.293,.177,progress));
-  glass.emissiveIntensity=lerp(.21,.061,progress);
+  const cover=coverageAt(progress,.38,.83);
+  // Lower windows and side windows don't look through the hanging wall.
+  coveredGlass.color.setRGB(lerp(.175,.096,cover),lerp(.324,.199,cover),lerp(.293,.177,cover));
+  coveredGlass.emissiveIntensity=lerp(.21,.061,cover);
  }
  function resize(aspect){
    if(!Number.isFinite(aspect)||aspect<=0)return;

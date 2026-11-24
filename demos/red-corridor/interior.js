@@ -1,3 +1,5 @@
+import {interiorCue} from './lighting.js';
+
 // Interior of a fictional school, matched by rhythm and light rather than by address.
 // The two states share a model; separate banks of practical lights do the switching.
 export function createInterior(THREE) {
@@ -8,7 +10,6 @@ export function createInterior(THREE) {
   camera.position.set(.46, 1.58, 3.02);
   camera.lookAt(-.27, 1.49, -18);
   const clamp = x => Math.min(1, Math.max(0, x));
-  const ease = (a,b,x) => { const t=clamp((x-a)/(b-a)); return t*t*(3-2*t); };
   const standard = (color, extra={}) => new THREE.MeshStandardMaterial({ color, roughness:.71, ...extra });
   const basic = (color,extra={}) => new THREE.MeshBasicMaterial({color,...extra});
   const unit = new THREE.BoxGeometry(1,1,1);
@@ -75,19 +76,20 @@ export function createInterior(THREE) {
   const trayGeo=new THREE.CylinderGeometry(.159,.163,.067,18);
   const puckGeo=new THREE.CylinderGeometry(.129,.156,.061,18);
   const shadeMaterial=()=>new THREE.ShaderMaterial({
-    uniforms:{cover:{value:0},id:{value:0}},
+    uniforms:{cover:{value:0},spill:{value:0},id:{value:0}},
     vertexShader:`
       varying vec2 coords; void main(){coords=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}
     `,
     fragmentShader:`
-      uniform float cover,id; varying vec2 coords;
+      uniform float cover,spill,id; varying vec2 coords;
       void main(){
         vec2 p=coords;
-        float f=smoothstep(1.-cover-.009,1.-cover+.009,p.y);
+        float f=smoothstep(1.-cover-.006,1.-cover+.006,p.y)*step(.0001,cover);
         float wave=.66+.19*cos(p.x*75.+id)+.07*cos(p.x*159.+(p.y+.1)*1.7+id);
         float slit=pow(max(0.,sin(p.x*517.+id)),34.)*.15+pow(max(0.,cos(p.x*181.+id)),75.)*.13;
         vec3 daylight=mix(vec3(.24,.38,.39),vec3(.74,.84,.82),smoothstep(0.,.82,p.y));
         daylight+=.032*sin(p.x*4.+2.9*p.y+id);
+        daylight=mix(daylight,vec3(.51,.15,.15),spill*.34*(.46+.54*p.y));
         vec3 vermilion=mix(vec3(.30,.005,.035),vec3(.94,.024,.085),wave);
         vec2 inkUV=vec2(1.-p.x,p.y)*vec2(13.,6.);
         vec2 cell=fract(inkUV), board=floor(inkUV);
@@ -279,27 +281,32 @@ export function createInterior(THREE) {
   }
 
   function update({progress=0,time=0,well=1}={}){
-    const p=clamp(progress), darkness=ease(.23,.91,p);
+    const p=clamp(progress), whole=interiorCue(p), darkness=whole.red;
     const exitStrength=well===false?0:well===true||!Number.isFinite(well)?1:clamp(well);
-    const natural=1-darkness;
+    const nearby=windows.map((_,i)=>interiorCue(p,i,windows.length));
+    const sample=(i,arr)=>nearby[Math.round(i*(nearby.length-1)/Math.max(1,arr.length-1))];
+    const natural=whole.day;
     heaven.intensity=.045+.865*natural;
     ambientFill.intensity=.072+.10*natural;
     end.intensity=2.0+(10.5+4.7*darkness)*exitStrength;
     coolCyan.color.setRGB(.034,.050,.053).lerp(strongCyan,exitStrength);
     skyCyan.color.setRGB(.043,.061,.067).lerp(strongSky,exitStrength);
-    for(const [i,l] of ordinary.entries())l.intensity=(6.4-i*.34)*(1-ease(.18+i*.025,.74+i*.018,p));
-    for(const [i,l] of overhead.entries())l.intensity=5.9*(1-ease(.31+i*.037,.77+i*.023,p));
-    for(const [i,l] of litCeilings.entries())l.emissiveIntensity=.002+.628*(1-ease(.29+i*.018,.75+i*.014,p));
-    for(const [i,w] of windows.entries())w.shade.uniforms.cover.value=ease(.17+i*.021,.61+i*.026,p);
+    for(const [i,l] of ordinary.entries())l.intensity=(6.4-i*.34)*sample(i,ordinary).day;
+    for(const [i,l] of overhead.entries())l.intensity=5.9*sample(i,overhead).overhead;
+    for(const [i,l] of litCeilings.entries())l.emissiveIntensity=.002+.628*nearby[i].overhead;
+    for(const [i,w] of windows.entries()){
+      w.shade.uniforms.cover.value=nearby[i].cover;
+      w.shade.uniforms.spill.value=nearby[i].spill;
+    }
     for(const [i,l] of lamps.entries()){
-      const lit=ease(.29+i*.033,.73+i*.039,p);
+      const lit=sample(i,lamps).red;
       const amplitude=(.985+.015*Math.sin(time*.83+i*1.72));
       l.intensity=creepy[i].power*lit*amplitude;
     }
     redBounce.intensity=darkness*5.1;
     function draw(pool,strength){pool.visible=strength>.001;pool.material.uniforms.amp.value=strength;}
-    for(const [i,pool] of floorPools.entries())draw(pool,ease(.4+i*.026,.80+i*.017,p)*(.050+(i%3)*.014));
-    for(const [i,pool] of wallPools.entries())draw(pool,ease(.42+i*.015,.83+i*.014,p)*(.037+(i%3)*.04));
+    for(const [i,pool] of floorPools.entries())draw(pool,sample(i,floorPools).reflections*(.050+(i%3)*.014));
+    for(const [i,pool] of wallPools.entries())draw(pool,sample(i,wallPools).reflections*(.037+(i%3)*.04));
     draw(bluePool,(.074+.10*darkness)*exitStrength);
     draw(whitePool,.087*natural);
   }

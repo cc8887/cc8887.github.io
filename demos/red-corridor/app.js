@@ -1,13 +1,13 @@
+import {DURATION_SECONDS as bannerDur} from "./motion.js";
 const $ = (id)=>document.getElementById(id);
 const title=$("scene-title"), status=$("scene-status"), stage=$("stage"), message=$("stage-message");
 const progressInput=$("progress"), wellInput=$("well"), percentage=$("percentage"), wellValue=$("well-value");
-const bannerDur=4.8;
 const still=window.matchMedia("(prefers-reduced-motion: reduce)");
 const keyframes=[...document.querySelectorAll("[data-progress]")];
 const viewControls={outside:$("outside"),inside:$("inside")};
 const i18n={
   outside:{title:"教学楼外墙",label:"外景",states:["横幅卷起","横幅延展中","红布盖住外墙"]},
-  inside:{title:"二层走廊",label:"内景",states:["白色顶灯与窗边日光","顶灯退暗，左窗红光渐强","左窗红光主导，尽头留冷光"]},
+  inside:{title:"三层走廊",label:"内景",states:["白色顶灯与窗边日光","顶灯退暗，左窗红光渐强","左窗红光主导，尽头留冷光"]},
 };
 let canvas=$("scene");
 let view="outside",progress=0,well=0.8,time=0;
@@ -115,7 +115,7 @@ async function setupFallback(){
     const replacement=canvas.cloneNode(false);
     canvas.replaceWith(replacement);
     canvas=replacement;
-    const mod=await import("./fallback.js");
+    const mod=await import("./fallback.js?v=weighted-hem-1");
     const f=mod.createFallback(canvas);
     bindEngine({type:"fallback",resize:()=>f.resize(),draw:(state)=>f.draw(state)},"兼容预览");
   }catch(error){console.error(error);unavailable();}
@@ -127,7 +127,7 @@ async function init(){
     const gl=canvas.getContext("webgl2",{antialias:true,alpha:false,powerPreference:"low-power"});
     if(!gl){await setupFallback();return;}
     const [THREE,{createExterior},{createInterior}]=await Promise.all([
-      import("./vendor/three.module.js"),import("./exterior.js"),import("./interior.js"),
+      import("./vendor/three.module.js"),import("./exterior.js?v=weighted-hem-1"),import("./interior.js?v=weighted-hem-1"),
     ]);
     const renderer=new THREE.WebGLRenderer({canvas,context:gl,antialias:true,alpha:false});
     renderer.outputColorSpace=THREE.SRGBColorSpace;
