@@ -1,5 +1,5 @@
 import {DURATION_SECONDS as bannerDur} from "./motion.js";
-import {INDOOR_WINDOW_START, INDOOR_WINDOW_END} from "./lighting.js?v=window-sync-1";
+import {INDOOR_WINDOW_START, INDOOR_WINDOW_END} from "./lighting.js?v=window-accelerated-1";
 const $ = (id)=>document.getElementById(id);
 const title=$("scene-title"), status=$("scene-status"), stage=$("stage"), message=$("stage-message");
 const progressInput=$("progress"), wellInput=$("well"), percentage=$("percentage"), wellValue=$("well-value");
@@ -17,6 +17,12 @@ function redraw(){
   if(backend&&!raf&&!document.hidden)raf=requestAnimationFrame(frame);
 }
 function clean(node,str){if(node.textContent!==str)node.textContent=str;}
+function keyProgress(key){
+  const p=Number(key.dataset.progress);
+  return view==="inside"&&p===.5
+    ?INDOOR_WINDOW_START+(INDOOR_WINDOW_END-INDOOR_WINDOW_START)*Math.SQRT1_2
+    :p;
+}
 function controls(){
   const p=Math.round(progress*100),w=Math.round(well*100);
   if(progressInput.value!==String(p))progressInput.value=p;
@@ -25,7 +31,7 @@ function controls(){
   wellInput.style.setProperty("--fill",w+"%");
   percentage.value=p+"%";
   wellValue.value=w+"%";
-  for(const key of keyframes)key.setAttribute("aria-pressed",String(Math.abs(Number(key.dataset.progress)-progress)<.005));
+  for(const key of keyframes)key.setAttribute("aria-pressed",String(Math.abs(keyProgress(key)-progress)<.005));
   for(const [name,btn] of Object.entries(viewControls))btn.setAttribute("aria-pressed",String(name===view));
   const idx=view==="inside"
     ?(progress<=INDOOR_WINDOW_START?0:progress>=INDOOR_WINDOW_END?2:1)
@@ -83,7 +89,7 @@ function frame(now){
 for(const [name,btn] of Object.entries(viewControls))btn.addEventListener("click",()=>{view=name;controls();redraw();});
 progressInput.addEventListener("input",()=>change(Number(progressInput.value)/100));
 wellInput.addEventListener("input",()=>{well=Number(wellInput.value)/100;controls();redraw();});
-for(const key of keyframes)key.addEventListener("click",()=>change(Number(key.dataset.progress)));
+for(const key of keyframes)key.addEventListener("click",()=>change(keyProgress(key)));
 $("play").addEventListener("click",()=>transport(1));
 $("reverse").addEventListener("click",()=>transport(-1));
 $("reset").addEventListener("click",()=>change(0));
@@ -118,7 +124,7 @@ async function setupFallback(){
     const replacement=canvas.cloneNode(false);
     canvas.replaceWith(replacement);
     canvas=replacement;
-    const mod=await import("./fallback.js?v=window-sync-1");
+    const mod=await import("./fallback.js?v=window-accelerated-1");
     const f=mod.createFallback(canvas);
     bindEngine({type:"fallback",resize:()=>f.resize(),draw:(state)=>f.draw(state)},"兼容预览");
   }catch(error){console.error(error);unavailable();}
@@ -130,7 +136,7 @@ async function init(){
     const gl=canvas.getContext("webgl2",{antialias:true,alpha:false,powerPreference:"low-power"});
     if(!gl){await setupFallback();return;}
     const [THREE,{createExterior},{createInterior}]=await Promise.all([
-      import("./vendor/three.module.js"),import("./exterior.js?v=weighted-hem-1"),import("./interior.js?v=window-sync-1"),
+      import("./vendor/three.module.js"),import("./exterior.js?v=weighted-hem-1"),import("./interior.js?v=window-accelerated-1"),
     ]);
     const renderer=new THREE.WebGLRenderer({canvas,context:gl,antialias:true,alpha:false});
     renderer.outputColorSpace=THREE.SRGBColorSpace;

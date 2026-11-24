@@ -1,5 +1,5 @@
 import { PANEL_COUNT, panelMotion } from './motion.js';
-import { interiorCue } from './lighting.js?v=window-sync-1';
+import { interiorCue } from './lighting.js?v=window-accelerated-1';
 // A geometry-first Canvas fallback: independent of WebGL, textures and external assets.
 // Canvas surfaces are lit locally by distinct daylight and red-light palettes.
 const TAU = Math.PI * 2;

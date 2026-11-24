@@ -1,4 +1,4 @@
-import {interiorCue} from './lighting.js?v=window-sync-1';
+import {interiorCue} from './lighting.js?v=window-accelerated-1';
 
 // Interior of a fictional school, matched by rhythm and light rather than by address.
 // The two states share a model; separate banks of practical lights do the switching.
